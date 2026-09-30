@@ -1,0 +1,122 @@
+/-
+Copyright (c) 2026 Re'em Melamed-Katz. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Re'em Melamed-Katz
+-/
+import Mathlib.Data.Fintype.Basic
+import Mathlib.Topology.Order
+import Mathlib.Topology.Compactness.Compact
+import Mathlib.Topology.Constructions
+import AlgebraicAutomata.FactorizationForest.Split
+
+/-!
+# Infinitary Simon's Theorem over ℕ
+
+Formalization of the infinitary variant of
+Simon's Factorization Forest Theorem for the linear order ⟨ℕ, <⟩.
+
+## References
+
+* [T. Colcombet, *The Factorization Forest Theorem*][colcombet2008]
+-/
+
+open scoped Topology
+
+namespace RamseySplit
+
+section RamseySplitInfinitary
+
+variable {S : Type*} [Semigroup S] [Fintype S]
+variable [Nonempty (Fin (nS S))]
+variable (σ : MultiplicativeLabeling S ℕ)
+
+/-- Restricts a multiplicative labeling on `ℕ` to `Fin (N + 1)`. -/
+def restrictLabeling (N : ℕ) : MultiplicativeLabeling S (Fin (N + 1)) where
+  σ := fun i j => σ.σ i.val j.val
+  prop := fun x y z hxy hyz => σ.prop x.val y.val z.val hxy hyz
+
+/-- A choice of Ramsey split on `Fin (N + 1)` guaranteed by Simon's split theorem. -/
+noncomputable def s_N (N : ℕ) : Split (Fin (N + 1)) (nS S) :=
+  (simon_split (restrictLabeling σ N)).choose
+
+/-- The chosen split `s_N` is a Ramsey split for the restricted labeling. -/
+lemma isRamsey_s_N (N : ℕ) : IsRamsey (restrictLabeling σ N) (s_N σ N) :=
+  (simon_split (restrictLabeling σ N)).choose_spec.2
+
+/-- Extension of `s_N` to all of `ℕ` by a default value outside `[0, N]`. -/
+noncomputable def f_N (N : ℕ) : ℕ → Fin (nS S) :=
+  fun k =>
+    if hk : k ≤ N then
+      s_N σ N ⟨k, Nat.lt_succ_of_le hk⟩
+    else
+      Classical.choice inferInstance
+
+/-- The extension `f_N` agrees with `s_N` on indices within `[0, N]`. -/
+lemma f_N_eq {N k : ℕ} (hk : k ≤ N) :
+    f_N σ N k = s_N σ N ⟨k, Nat.lt_succ_of_le hk⟩ :=
+  dite_eq_left hk
+
+/-- By compactness of `ℕ → Fin (nS S)`, the sequence `(f_N)` has a cluster point. -/
+lemma exists_clusterPt :
+    ∃ s : ℕ → Fin (nS S), MapClusterPt s Filter.atTop (f_N σ) :=
+  (isCompact_univ.exists_mapClusterPt
+    (show Filter.map (f_N σ) Filter.atTop ≤ Filter.principal Set.univ by simp)).imp
+    fun _ ↦ And.right
+
+/-- Since `s` is a cluster point, for any finite bound `M`, there is `N ≥ M`
+such that `f_N` coincides with `s` on `[0, M]`. -/
+lemma exists_coinciding_N (s : ℕ → Fin (nS S))
+    (hs : MapClusterPt s Filter.atTop (f_N σ)) (M : ℕ) :
+    ∃ N, M ≤ N ∧ ∀ k ≤ M, f_N σ N k = s k :=
+  (Filter.frequently_atTop.mp (mapClusterPt_iff_frequently.mp hs _
+    (set_pi_mem_nhds (Set.finite_Iic M) fun _ _ => (isOpen_discrete _).mem_nhds rfl)) M).imp
+    fun _ ⟨hM, h_pi⟩ ↦ ⟨hM, fun _ hk ↦ (h_pi _ hk).symm⟩
+
+/-- If a split `s_N` on `Fin (N + 1)` agrees with a split `s` on `ℕ` up to `max x y`,
+then the split relation `SplitRelation s x y` is inherited by `s_N`. -/
+lemma splitRelation_of_agree {n N : ℕ} (s : Split ℕ n) (s_N : Split (Fin (N + 1)) n)
+    (x y : Fin (N + 1))
+    (h_agree : ∀ k ≤ max x y, s_N k = s k.val)
+    (hsr : SplitRelation s x.val y.val) :
+    SplitRelation s_N x y := by
+  grind
+
+lemma splitRelation_s_N {s : ℕ → Fin (nS S)} {M N : ℕ} (hMN : M ≤ N)
+    (h_fN : ∀ k ≤ M, f_N σ N k = s k) {a b : ℕ} (ha : a ≤ M) (hb : b ≤ M)
+    (h : SplitRelation s a b) :
+    SplitRelation (s_N σ N) ⟨a, by omega⟩ ⟨b, by omega⟩ := by
+  apply splitRelation_of_agree s (s_N σ N) ⟨a, by omega⟩ ⟨b, by omega⟩ _ h
+  intro k hk
+  have hkM : k.val ≤ M := by
+    rcases le_max_iff.mp hk with hle | hle
+    · grind
+    · grind
+  have hkN : k.val ≤ N := hkM.trans hMN
+  rw [show k = ⟨k.val, Nat.lt_succ_of_le hkN⟩ from Fin.ext rfl, ← f_N_eq σ hkN]
+  exact h_fN k.val hkM
+
+/-- The infinitary Simon's split theorem for ℕ:
+for any multiplicative labeling `σ` over ℕ into a finite semigroup `S`,
+there exists a Ramsey split of size `nS S`. -/
+theorem simon_split_infinitary_nat :
+    ∃ s : Split ℕ (nS S), IsRamsey σ s := by
+  obtain ⟨s, hs⟩ := exists_clusterPt σ
+  use s
+  constructor
+  · intro x y z hxy hyz hsr_xy hsr_yz
+    obtain ⟨N, hMN, h_fN⟩ := exists_coinciding_N σ s hs z
+    exact (isRamsey_s_N σ N).1 ⟨x, by omega⟩ ⟨y, by omega⟩ ⟨z, by omega⟩
+      (Fin.lt_def.mpr hxy) (Fin.lt_def.mpr hyz)
+      (splitRelation_s_N σ hMN h_fN (by omega) (by omega) hsr_xy)
+      (splitRelation_s_N σ hMN h_fN (by omega) (by omega) hsr_yz)
+  · intro x y u v hxy huv hsr_xy hsr_uv hsr_xu
+    obtain ⟨N, hMN, h_fN⟩ := exists_coinciding_N σ s hs (max y v)
+    exact (isRamsey_s_N σ N).2 ⟨x, by omega⟩ ⟨y, by omega⟩ ⟨u, by omega⟩ ⟨v, by omega⟩
+      (Fin.lt_def.mpr hxy) (Fin.lt_def.mpr huv)
+      (splitRelation_s_N σ hMN h_fN (by omega) (by omega) hsr_xy)
+      (splitRelation_s_N σ hMN h_fN (by omega) (by omega) hsr_uv)
+      (splitRelation_s_N σ hMN h_fN (by omega) (by omega) hsr_xu)
+
+end RamseySplitInfinitary
+
+end RamseySplit
