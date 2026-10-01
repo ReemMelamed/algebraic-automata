@@ -5,7 +5,6 @@ Authors: Re'em Melamed-Katz
 -/
 import Mathlib.Algebra.Divisibility.Basic
 import Mathlib.Algebra.Group.Basic
-import Mathlib.Data.Setoid.Basic
 import Mathlib.Algebra.Group.Opposite
 import Mathlib.Data.Set.Basic
 import Mathlib.Basic.Finite.Defs
