@@ -21,8 +21,4 @@ import AlgebraicAutomata.FactorizationForest.Infinitary
 import AlgebraicAutomata.FactorizationForest.Tree
 import AlgebraicAutomata.FactorizationForest.TruncatedAddition
 import AlgebraicAutomata.FactorizationForest.Deterministic
-import AlgebraicAutomata.Semiring.Tropical
-import AlgebraicAutomata.Semiring.Stability
-import AlgebraicAutomata.Semiring.Stabilization
-import AlgebraicAutomata.Semiring.Covering
 import AlgebraicAutomata.Automata.DistanceAutomaton
