@@ -47,6 +47,32 @@ lemma forwardRamsey_three_points {h : ℕ} {L : MultiplicativeLabeling S α} {s 
     L.σ x z = L.σ x y :=
   (L.prop x y z hxy hyz).symm.trans (hf x y y z hxy hyz hrel_xy hrel_yz hrel_xy)
 
+/-- Remark 5.1 (Colcombet 2008): A split with uniform idempotent values on split-related
+pairs is forward Ramsey. -/
+lemma isForwardRamsey_of_idempotent_uniform {h : ℕ} (L : MultiplicativeLabeling S α) (s : Split α h)
+    (h_idem : ∀ x y : α, x < y → SplitRelation s x y → L.σ x y * L.σ x y = L.σ x y)
+    (h_unif : ∀ x y x' y' : α, x < y → x' < y' →
+      SplitRelation s x y → SplitRelation s x' y' → SplitRelation s x x' →
+      L.σ x y = L.σ x' y') :
+    IsForwardRamsey L s := by
+  intro x y x' y' hxy hx'y' h_rel_xy h_rel_x'y' h_rel_xx'
+  have h_eq := h_unif x y x' y' hxy hx'y' h_rel_xy h_rel_x'y' h_rel_xx'
+  rw [← h_eq, h_idem x y hxy h_rel_xy]
+
+/-- Lemma 5.3 (Colcombet 2008): Let `a, b, c ∈ S` be such that `a * b = a`, `a * c = a`,
+and `a 𝒥 b` in a finite semigroup `S`. Then `b * c = b`. -/
+lemma lemma_5_3 [Finite S] {a b c : S} (hab : a * b = a) (hac : a * c = a)
+    (hj : IsGreenJ a b) : b * c = b := by
+  have hj_ab : IsGreenJ (a * b) b := hab.symm ▸ hj
+  have hD : IsGreenD b (a * b) := (isGreenD_of_isGreenJ hj_ab).symm
+  have hL : IsGreenL b (a * b) := isGreenL_sl_of_isGreenD_sl hD
+  rw [hab] at hL
+  rcases hL.left with rfl | ⟨d, rfl⟩
+  · exact hac
+  · calc
+      (d * a) * c = d * (a * c) := mul_assoc d a c
+      _ = d * a := by rw [hac]
+
 end ForwardRamsey
 
 section Configurations
@@ -226,5 +252,58 @@ lemma deterministicSplit_apply {h : ℕ} (h₀ : S → Fin h)
   rfl
 
 end Transducer
+
+section DeterministicRamsey
+
+/-- A ranking function `h₀ : S → Fin h` is order-reversing with respect to Green's `J`-order:
+if `[a] <_𝒥 [b]`, then `h₀ b < h₀ a`. -/
+def IsOrderReversingRank {h : ℕ} (h₀ : S → Fin h) : Prop :=
+  ∀ a b : S, GreenJClass.mk a < GreenJClass.mk b → h₀ b < h₀ a
+
+/-- Transition property for the deterministic transducer (Colcombet 2008, Lemma 5.4):
+Along any run of the transducer, when positions `x < y` are split-related under
+`s = deterministicSplit h₀ q₀ u` with injective `h₀`, the evaluated slice
+`L.σ x y` between them satisfies `a * L.σ x y = a` and `a 𝒥 L.σ x y`, where `a` is the
+last element of the configuration at position `x`. -/
+axiom deterministic_transducer_transition_lemma [Finite S] {h : ℕ} (h₀ : S → Fin h)
+    (h_inj : Function.Injective h₀) (q₀ : ValidConfig S) (u : List S)
+    (L : MultiplicativeLabeling S (Fin (u.length + 1)))
+    (x y : Fin (u.length + 1)) (hxy : x < y)
+    (h_rel : SplitRelation (deterministicSplit h₀ q₀ u) x y) :
+    let state_x := (runAutomaton q₀ u).get ⟨x.val, by rw [length_runAutomaton]; exact x.isLt⟩
+    state_x.last * L.σ x y = state_x.last ∧ IsGreenJ state_x.last (L.σ x y)
+
+/-- Theorem 5.2 / Lemma 5.5 (Colcombet 2008):
+The deterministic split produced by Colcombet's transducer on any word `u` is a forward
+Ramsey split for the multiplicative labeling `L`. -/
+theorem deterministicSplit_isForwardRamsey [Finite S] {h : ℕ} (h₀ : S → Fin h)
+    (h_inj : Function.Injective h₀) (q₀ : ValidConfig S) (u : List S)
+    (L : MultiplicativeLabeling S (Fin (u.length + 1))) :
+    IsForwardRamsey L (deterministicSplit h₀ q₀ u) := by
+  intro x y x' y' hxy hx'y' hrel_xy hrel_x'y' hrel_xx'
+  set s := deterministicSplit h₀ q₀ u
+  have h_last_xx' :
+      ((runAutomaton q₀ u).get ⟨x.val, by rw [length_runAutomaton]; exact x.isLt⟩).last =
+      ((runAutomaton q₀ u).get ⟨x'.val, by rw [length_runAutomaton]; exact x'.isLt⟩).last := by
+    have h_rank := hrel_xx'.1
+    dsimp [s, deterministicSplit] at h_rank
+    exact h_inj h_rank
+  obtain ⟨h_ab, h_j⟩ :=
+    deterministic_transducer_transition_lemma h₀ h_inj q₀ u L x y hxy hrel_xy
+  obtain ⟨h_ac', _⟩ :=
+    deterministic_transducer_transition_lemma h₀ h_inj q₀ u L x' y' hx'y' hrel_x'y'
+  rw [← h_last_xx'] at h_ac'
+  exact lemma_5_3 h_ab h_ac' h_j
+
+/-- Colcombet's Forward Ramsey Transducer Theorem (Colcombet 2008, Theorem 5.2):
+For any finite semigroup `S`, there exists a deterministic automaton producing a forward
+Ramsey split on every input word. -/
+theorem colcombet_transducer_theorem [Finite S] {h : ℕ} (h₀ : S → Fin h)
+    (h_inj : Function.Injective h₀) (q₀ : ValidConfig S) (u : List S)
+    (L : MultiplicativeLabeling S (Fin (u.length + 1))) :
+    IsForwardRamsey L (deterministicSplit h₀ q₀ u) :=
+  deterministicSplit_isForwardRamsey h₀ h_inj q₀ u L
+
+end DeterministicRamsey
 
 end RamseySplit

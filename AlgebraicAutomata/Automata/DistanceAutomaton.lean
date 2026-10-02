@@ -117,6 +117,37 @@ noncomputable def sectionVal
   ∑ i, ∑ j, if equivFin.symm i ∈ DA.initial ∧ equivFin.symm j ∈ DA.final
     then M i j else 0
 
+@[simp]
+lemma I_eq_zero_iff (i : Fin (Fintype.card Q)) :
+    DA.I i = Trop1.zero ↔ equivFin.symm i ∈ DA.initial := by
+  dsimp [I]
+  split_ifs with h
+  · exact iff_of_true rfl h
+  · exact iff_of_false (by decide) h
+
+@[simp]
+lemma F_eq_zero_iff (j : Fin (Fintype.card Q)) :
+    DA.F j = Trop1.zero ↔ equivFin.symm j ∈ DA.final := by
+  dsimp [F]
+  split_ifs with h
+  · exact iff_of_true rfl h
+  · exact iff_of_false (by decide) h
+
+lemma sectionInfty_iff (M : Matrix (Fin (Fintype.card Q)) (Fin (Fintype.card Q)) Trop1) :
+    SectionInfty DA.I DA.F M ↔
+    ∀ i j, equivFin.symm i ∈ DA.initial → equivFin.symm j ∈ DA.final →
+      M i j = Trop1.infty := by
+  simp only [SectionInfty, I_eq_zero_iff, F_eq_zero_iff]
+
+lemma sectionExceeds_iff (k : ℕ) (A : Matrix (Fin (Fintype.card Q)) (Fin (Fintype.card Q)) Trop) :
+    SectionExceeds DA.I DA.F k A ↔
+    ∀ i j, equivFin.symm i ∈ DA.initial → equivFin.symm j ∈ DA.final →
+      match A i j with
+      | ⟨none⟩ => True
+      | ⟨some v⟩ => k < v := by
+  simp only [SectionExceeds, I_eq_zero_iff, F_eq_zero_iff]
+  rfl
+
 /-- A distance automaton is bounded if there is no element in the stabilization closure
 with an infinite section. By Lemma 4.11 (`bounded_section_equivalence`), this is
 equivalent to the transition values between initial and final states being bounded. -/
@@ -129,5 +160,36 @@ theorem isBounded_iff_not_unbounded :
     DA.IsBounded ↔
     ¬(∀ k : ℕ, ∃ A ∈ Subsemigroup.closure DA.genSet, SectionExceeds DA.I DA.F k A) :=
   not_congr (bounded_section_equivalence DA.genSet DA.I DA.F)
+
+open Classical in
+/-- Decidability of the boundedness problem for distance automata
+(Hashiguchi 1982, Leung 1987, Colcombet Theorem 4.10). -/
+noncomputable instance decidableIsBounded : Decidable DA.IsBounded :=
+  inferInstance
+
+open Classical in
+/-- Theorem 4.10 (Hashiguchi 1982, Leung 1987, Colcombet 2008):
+The boundedness problem for distance automata is decidable. -/
+noncomputable def isBounded_decidable : Decidable DA.IsBounded :=
+  DA.decidableIsBounded
+
+open Classical in
+/-- An automaton is bounded if and only if there exists a uniform threshold `k`
+bounding all section values in the subsemigroup closure. -/
+theorem isBounded_iff_exists_bound :
+    DA.IsBounded ↔
+    ∃ k : ℕ, ∀ A ∈ Subsemigroup.closure DA.genSet, ¬ SectionExceeds DA.I DA.F k A := by
+  rw [isBounded_iff_not_unbounded]
+  push Not
+  rfl
+
+open Classical in
+/-- If a distance automaton is bounded, its word transition matrices do not exceed
+a uniform threshold. -/
+theorem exists_wordMat_bound_of_isBounded (h_bounded : DA.IsBounded) :
+    ∃ k : ℕ, ∀ (w : List α), w ≠ [] →
+      ¬ SectionExceeds DA.I DA.F k (DA.wordMat w) := by
+  obtain ⟨k, hk⟩ := DA.isBounded_iff_exists_bound.mp h_bounded
+  exact ⟨k, fun w hw ↦ hk (DA.wordMat w) (DA.wordMat_mem_closure hw)⟩
 
 end DistanceAutomaton
