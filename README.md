@@ -6,20 +6,21 @@
 [![Mathlib 4](https://img.shields.io/badge/powered_by-Mathlib4-purple.svg)](https://github.com/leanprover-community/mathlib4)
 [![License](https://img.shields.io/badge/License-Apache_2.0-green.svg)](LICENSE)
 
-A formalization of finite semigroup theory, Simon's Factorization Forest Theorem, Colcombet's deterministic forward Ramsey transducers, and distance automata boundedness in Lean 4.
+A formalization of finite semigroup theory, Simon's Factorization Forest Theorem, and Colcombet's deterministic forward Ramsey transducers in Lean 4.
 
 ## Overview
 
 In theoretical computer science and formal language theory, algebraic techniques analyze computations via the structure of finite semigroups. A central combinatorial foundation is **Simon's Factorization Forest Theorem** (1990), a non-commutative structural analogue of Ramsey's Theorem: every word evaluated in a finite semigroup $S$ admits an unranked factorization tree of bounded height ($3N(S) - 1$) whose wide nodes evaluate to idempotents.
 
-This repository provides a machine-checked formalization in Lean 4 of the algebraic structure of finite semigroups, Simon's Factorization Forest Theorem, Colcombet's deterministic transducer construction for forward Ramsey splits, and Leung's algebraic decision procedure for the boundedness problem in distance automata.
+This repository provides a machine-checked formalization in Lean 4 of the algebraic structure of finite semigroups, Simon's Factorization Forest Theorem, and Colcombet's deterministic transducer construction for forward Ramsey splits.
 
 ## Project Structure & Formalized Content
 
-The codebase is organized into four main components:
+The codebase is organized into three main components:
 
 ### 1. Green's Relations & Finite Semigroup Structure
 - **Green's Relations** (`AlgebraicAutomata/Semigroup/GreensRelations/Basic.lean`): Definitions of Green's preorders and equivalence relations ($\mathcal{L}, \mathcal{R}, \mathcal{H}, \mathcal{D}, \mathcal{J}$) and semigroup duality with opposite semigroups.
+- **Multiplication Sequences** (`AlgebraicAutomata/Semigroup/GreensRelations/MulSeq.lean`): Tools for analyzing finite semigroups via iterated multiplication sequences and pigeonhole arguments.
 - **Green's Lemma** (`AlgebraicAutomata/Semigroup/GreensRelations/Green.lean`): Invertible maps between $\mathcal{H}$-classes within the same $\mathcal{D}$-class.
 - **Finite Semigroup Properties** (`AlgebraicAutomata/Semigroup/GreensRelations/Finite.lean`): Proof that $\mathcal{D} = \mathcal{J}$ in finite semigroups, stability lemmas under multiplication, and Lemma 5.3 on right-multiplication.
 - **Preorders & Partial Orders** (`AlgebraicAutomata/Semigroup/GreensRelations/Order.lean`): Order structures induced by Green's $\mathcal{J}$-classes.
@@ -40,15 +41,7 @@ The codebase is organized into four main components:
 - **Valid Configurations & State Space** (`AlgebraicAutomata/FactorizationForest/Deterministic.lean`): Strict ascending $\mathcal{J}$-chains and proof that the configuration state space is finite (bounded by $|S|^{|S|}$).
 - **Transducer Construction & Ramsey Proof** (`AlgebraicAutomata/FactorizationForest/Deterministic.lean`): The deterministic transition function (`stepConfig`), Lemma 5.3, transition invariants, and proof that the deterministic transducer generates forward Ramsey splits (Theorem 5.2 / Lemma 5.5).
 
-### 4. Tropical Matrix Semirings & Distance Automata
-- **Tropical Semirings** (`AlgebraicAutomata/Semiring/Tropical.lean`): The min-plus semiring $\mathbb{T} = (\mathbb{N} \cup \{\infty\}, \min, +)$, reduced semiring $\mathbb{T}_1 = (\{0, 1, \infty\}, \min, +)$, matrix multiplication, and matrix norms.
-- **Matrix Stability & Stabilization** (`AlgebraicAutomata/Semiring/Stability.lean`, `Stabilization.lean`): Stable matrices over $\mathbb{T}_1$, Leung's stabilization operator $M^\sharp$, and the finite stabilization closure $\langle Z \rangle^\sharp$.
-- **Covering Theorem** (`AlgebraicAutomata/Semiring/Covering.lean`): The Factorization Forest Covering Theorem and bounded section equivalence (Lemma 4.11).
-- **Distance Automata Decidability** (`AlgebraicAutomata/Automata/DistanceAutomaton.lean`): Distance automata representation, tropical run costs, section evaluations, and decidability of the boundedness problem (Hashiguchi 1982, Leung 1987, Colcombet Theorem 4.10).
-
 ## References
 
 * Colcombet, T. - *The Factorization Forest Theorem* (Handbook of Automata Theory, 2021)
 * Simon, I. - *Factorization forests of finite height* (Theoretical Computer Science, 1990)
-* Hashiguchi, K. - *Limitedness theorem on finite automata with distance functions* (Journal of Computer and System Sciences, 1982)
-* Leung, H. - *Limitedness theorem on finite automata with distance functions: An algebraic approach* (Theoretical Computer Science, 1991)
