@@ -21,4 +21,3 @@ import AlgebraicAutomata.FactorizationForest.Infinitary
 import AlgebraicAutomata.FactorizationForest.Tree
 import AlgebraicAutomata.FactorizationForest.TruncatedAddition
 import AlgebraicAutomata.FactorizationForest.Deterministic
-import AlgebraicAutomata.Automata.DistanceAutomaton

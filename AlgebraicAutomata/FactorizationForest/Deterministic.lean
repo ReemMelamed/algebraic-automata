@@ -265,16 +265,17 @@ Along any run of the transducer, when positions `x < y` are split-related under
 `s = deterministicSplit h₀ q₀ u` with injective `h₀`, the evaluated slice
 `L.σ x y` between them satisfies `a * L.σ x y = a` and `a 𝒥 L.σ x y`, where `a` is the
 last element of the configuration at position `x`. -/
-axiom deterministic_transducer_transition_lemma [Finite S] {h : ℕ} (h₀ : S → Fin h)
+lemma deterministic_transducer_transition_lemma [Finite S] {h : ℕ} (h₀ : S → Fin h)
     (h_inj : Function.Injective h₀) (q₀ : ValidConfig S) (u : List S)
     (L : MultiplicativeLabeling S (Fin (u.length + 1)))
     (x y : Fin (u.length + 1)) (hxy : x < y)
     (h_rel : SplitRelation (deterministicSplit h₀ q₀ u) x y) :
     let state_x := (runAutomaton q₀ u).get ⟨x.val, by rw [length_runAutomaton]; exact x.isLt⟩
-    state_x.last * L.σ x y = state_x.last ∧ IsGreenJ state_x.last (L.σ x y)
+    state_x.last * L.σ x y = state_x.last ∧ IsGreenJ state_x.last (L.σ x y) := by
+  simp only [List.get_eq_getElem]
+  sorry
 
-/-- Theorem 5.2 / Lemma 5.5 (Colcombet 2008):
-The deterministic split produced by Colcombet's transducer on any word `u` is a forward
+/-- The deterministic split produced by Colcombet's transducer on any word `u` is a forward
 Ramsey split for the multiplicative labeling `L`. -/
 theorem deterministicSplit_isForwardRamsey [Finite S] {h : ℕ} (h₀ : S → Fin h)
     (h_inj : Function.Injective h₀) (q₀ : ValidConfig S) (u : List S)
@@ -295,8 +296,7 @@ theorem deterministicSplit_isForwardRamsey [Finite S] {h : ℕ} (h₀ : S → Fi
   rw [← h_last_xx'] at h_ac'
   exact lemma_5_3 h_ab h_ac' h_j
 
-/-- Colcombet's Forward Ramsey Transducer Theorem (Colcombet 2008, Theorem 5.2):
-For any finite semigroup `S`, there exists a deterministic automaton producing a forward
+/-- For any finite semigroup `S`, there exists a deterministic automaton producing a forward
 Ramsey split on every input word. -/
 theorem colcombet_transducer_theorem [Finite S] {h : ℕ} (h₀ : S → Fin h)
     (h_inj : Function.Injective h₀) (q₀ : ValidConfig S) (u : List S)
