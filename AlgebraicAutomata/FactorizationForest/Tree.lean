@@ -177,8 +177,7 @@ lemma isRamsey_leaf (eval : List A → S) (a : A) : (leaf a).IsRamsey eval ↔ T
 
 @[simp]
 lemma isRamsey_binary (eval : List A → S) (l r : FactorizationTree A) :
-    (binary l r).IsRamsey eval ↔ l.IsRamsey eval ∧ r.IsRamsey eval := by
-  rw [IsRamsey]
+    (binary l r).IsRamsey eval ↔ l.IsRamsey eval ∧ r.IsRamsey eval := by rw [IsRamsey]
 
 /-- Auxiliary predicate verifying that all trees in a list are Ramsey. -/
 def listIsRamsey (eval : List A → S) : List (FactorizationTree A) → Prop
@@ -831,10 +830,7 @@ lemma treeToSplit_val (t : FactorizationTree A) (i : Fin (t.value.length + 1)) :
 lemma lcaHeightRaw_binary_mid (l r : FactorizationTree A) :
     lcaHeightRaw (.binary l r) l.value.length = (binary l r).height := by
   rw [lcaHeightRaw]
-  split_ifs with h1 h2
-  · omega
-  · rfl
-  · omega
+  grind
 
 lemma lcaHeightRaw_binary_left (l r : FactorizationTree A) {i : ℕ} (hi : i < l.value.length) :
     lcaHeightRaw (.binary l r) i = lcaHeightRaw l i := by
@@ -845,10 +841,7 @@ lemma lcaHeightRaw_binary_left (l r : FactorizationTree A) {i : ℕ} (hi : i < l
 lemma lcaHeightRaw_binary_right (l r : FactorizationTree A) {i : ℕ} (hi : l.value.length < i) :
     lcaHeightRaw (.binary l r) i = lcaHeightRaw r (i - l.value.length) := by
   rw [lcaHeightRaw]
-  split_ifs with h1 h2
-  · omega
-  · omega
-  · rfl
+  grind
 
 lemma lcaHeightRaw_binary_lt (l r : FactorizationTree A) {i : ℕ} (hi : i ≠ l.value.length) :
     lcaHeightRaw (.binary l r) i < (binary l r).height := by
@@ -863,17 +856,10 @@ lemma lcaHeightRaw_binary_lt (l r : FactorizationTree A) {i : ℕ} (hi : i ≠ l
     omega
 
 lemma splitRelation_comm {α : Type*} [LinearOrder α] {h : ℕ} (s : Split α h) (x y : α) :
-    SplitRelation s x y ↔ SplitRelation s y x := by
-  have H (a b : α) (hab : SplitRelation s a b) : SplitRelation s b a :=
-    ⟨hab.1.symm, fun z hz1 hz2 ↦
-      hab.2 z (by simpa [min_comm] using hz1) (by simpa [max_comm] using hz2)⟩
-  exact ⟨H x y, H y x⟩
+    SplitRelation s x y ↔ SplitRelation s y x := by grind
 
 lemma splitRelation_refl {α : Type*} [LinearOrder α] {h : ℕ} (s : Split α h) (x : α) :
-    SplitRelation s x x :=
-  ⟨rfl, fun z hz1 hz2 ↦ by
-    have : z = x := le_antisymm hz2 (by simpa using hz1)
-    rw [this]⟩
+    SplitRelation s x x := by grind
 
 lemma splitRelation_binary_cases {l r : FactorizationTree A}
     {x y : Fin ((binary l r).value.length + 1)} (hxy : x < y)
@@ -1060,8 +1046,8 @@ lemma wordLabeling_binary_left {S : Type*} [Semigroup S]
     (wordLabeling eval hmul (binary l r).value).σ x y =
     (wordLabeling eval hmul l.value).σ ⟨x.val, by omega⟩
       ⟨y.val, by omega⟩ := by
-  dsimp [wordLabeling]
-  rw [value_binary, list_drop_take_append_left _ _ _ _ hy]
+  simp
+  grind
 
 lemma wordLabeling_binary_right {S : Type*} [Semigroup S]
     (eval : List A → S)
@@ -1080,8 +1066,7 @@ lemma wordLabeling_binary_right {S : Type*} [Semigroup S]
         have := y.isLt
         simp [value_binary] at this
         omega⟩ := by
-  dsimp [wordLabeling]
-  rw [show y.val - l.value.length - (x.val - l.value.length) = y.val - x.val by omega,
+  simp only [show y.val - l.value.length - (x.val - l.value.length) = y.val - x.val by omega,
     value_binary, list_drop_take_append_right _ _ _ _ hx]
 
 lemma lcaHeightRaw_idempotent_eq_height {cs : List (FactorizationTree A)} {i : ℕ} :
@@ -1281,8 +1266,7 @@ lemma wordLabeling_idempotent_left {S : Type*} [Semigroup S]
     (wordLabeling eval hmul (idempotent (c :: cs)).value).σ x y =
     (wordLabeling eval hmul c.value).σ ⟨x.val, by omega⟩
       ⟨y.val, by omega⟩ := by
-  dsimp [wordLabeling]
-  rw [value_idempotent, listValue_cons, list_drop_take_append_left _ _ _ _ hy]
+  simp only [value_idempotent, listValue_cons, list_drop_take_append_left _ _ _ _ hy]
 
 lemma splitRelation_idempotent_left {c : FactorizationTree A}
     {cs : List (FactorizationTree A)}
@@ -1402,8 +1386,7 @@ lemma wordLabeling_idempotent_right {S : Type*} [Semigroup S]
     (_ : x.val ≤ y.val) :
     (wordLabeling eval hmul (idempotent (c :: cs)).value).σ x y =
     eval (((listValue cs).drop (x.val - c.value.length)).take (y.val - x.val)) := by
-  dsimp [wordLabeling]
-  rw [value_idempotent, listValue_cons, list_drop_take_append_right _ _ _ _ hx]
+  simp only [value_idempotent, listValue_cons, list_drop_take_append_right _ _ _ _ hx]
 
 lemma length_idempotent_cons (c : FactorizationTree A) (cs : List (FactorizationTree A)) :
     (idempotent (c :: cs)).value.length = c.value.length + (idempotent cs).value.length := by
@@ -1427,8 +1410,7 @@ lemma wordLabeling_idempotent_cons_right {S : Type*} [Semigroup S]
         have := y.isLt
         omega⟩ := by
   rw [wordLabeling_idempotent_right eval hmul c cs x y hx hxy]
-  dsimp [wordLabeling]
-  rw [show y.val - c.value.length - (x.val - c.value.length) = y.val - x.val by omega,
+  simp only [show y.val - c.value.length - (x.val - c.value.length) = y.val - x.val by omega,
     value_idempotent]
 
 lemma splitRelation_idempotent_cons_right {c : FactorizationTree A}
@@ -1668,17 +1650,14 @@ lemma treeToSplit_leaf_isRamsey {S : Type*} [Semigroup S]
   refine ⟨fun x y z _ _ _ _ ↦ by
     have := z.isLt
     simp only [value_leaf] at this
-    omega,
+    grind,
   fun x y u v _ _ _ _ _ ↦ by
     have hx := x.isLt
     have hy := y.isLt
     have hu := u.isLt
     have hv := v.isLt
     simp only [value_leaf] at hx hy hu hv
-    have : x = u := Fin.ext (by omega)
-    have : y = v := Fin.ext (by omega)
-    subst_vars
-    rfl⟩
+    grind⟩
 
 lemma idempotent_of_lt {S : Type*} [Semigroup S]
     (eval : List A → S)
@@ -1881,17 +1860,10 @@ lemma idempotent_of_lt {S : Type*} [Semigroup S]
         rcases splitRelation_idempotent_cases hcs_emp hxy hrel_xy with hy_lt | hx_ge
         · have hu_lt : u.val < c.value.length := by
             rcases lt_trichotomy x u with hxu | rxu | hux
-            · rcases splitRelation_idempotent_cases hcs_emp hxu hrel_xu with hu_lt' | hx_gt'
-              · exact hu_lt'
-              · omega
+            · rcases splitRelation_idempotent_cases hcs_emp hxu hrel_xu with hu_lt' | hx_gt' <;> grind
             · rw [← rxu]
               omega
-            · have hrel_ux : SplitRelation (treeToSplit (.idempotent (c :: cs))) u x := by
-                rw [splitRelation_comm]
-                exact hrel_xu
-              rcases splitRelation_idempotent_cases hcs_emp hux hrel_ux with hx_lt' | hu_gt'
-              · omega
-              · omega
+            · grind
           rcases splitRelation_idempotent_cases hcs_emp huv hrel_uv with hv_lt | hu_ge
           · have hrel_xy_c := splitRelation_idempotent_left hxy hy_lt hrel_xy
             have hrel_uv_c := splitRelation_idempotent_left huv hv_lt hrel_uv
