@@ -23,13 +23,9 @@ a Ramsey split (`simon_word`).
 
 open RamseySplit
 
-/-- An inductive type representing a factorization tree over an alphabet `A`. -/
 inductive FactorizationTree (A : Type*) where
-  /-- A leaf node labeled by a letter `a : A`. -/
   | leaf (a : A) : FactorizationTree A
-  /-- A binary product node combining two subtrees `l` and `r`. -/
   | binary (l r : FactorizationTree A) : FactorizationTree A
-  /-- An idempotent n-ary node with children list `children`. -/
   | idempotent (children : List (FactorizationTree A)) : FactorizationTree A
 
 namespace FactorizationTree
@@ -38,8 +34,6 @@ section TreeDefinitions
 
 variable {A : Type*}
 
-/-- The yield (spelled word) of a factorization tree, obtained by reading its leaves
-from left to right. -/
 def value (t : FactorizationTree A) : List A :=
   match t with
   | leaf a => [a]
@@ -57,14 +51,12 @@ lemma value_leaf (a : A) : (leaf a).value = [a] := by
 lemma value_binary (l r : FactorizationTree A) : (binary l r).value = l.value ++ r.value := by
   rw [value]
 
-/-- Auxiliary concatenation of yields for a list of factorization trees. -/
 def listValue (ts : List (FactorizationTree A)) : List A :=
   (ts.map value).flatten
 
 @[simp]
 lemma listValue_nil : listValue ([] : List (FactorizationTree A)) = [] := rfl
 
-/-- Decomposition of `listValue` on a non-empty list of trees. -/
 @[simp]
 lemma listValue_cons (t : FactorizationTree A) (ts : List (FactorizationTree A)) :
     listValue (t :: ts) = value t ++ listValue ts := rfl
@@ -75,8 +67,6 @@ lemma value_idempotent (children : List (FactorizationTree A)) :
   unfold value listValue
   simp
 
-/-- The height of a factorization tree, measuring the maximum number of edges
-from the root to any leaf. Leaves have height 0. -/
 def height (t : FactorizationTree A) : ℕ :=
   match t with
   | leaf _ => 0
@@ -95,7 +85,6 @@ lemma height_binary (l r : FactorizationTree A) :
   (binary l r).height = 1 + max l.height r.height := by
   rw [height]
 
-/-- Auxiliary height function for lists of factorization trees. -/
 def listHeight : List (FactorizationTree A) → ℕ
   | [] => 0
   | t :: ts => max (height t) (listHeight ts)
@@ -118,7 +107,6 @@ lemma height_idempotent (children : List (FactorizationTree A)) :
   | cons c cs ih =>
     simp [listHeight, ih]
 
-/-- Bounding the height of a list of trees when each individual tree's height is bounded. -/
 lemma listHeight_le {H : ℕ} : ∀ (ts : List (FactorizationTree A)),
     (∀ t ∈ ts, height t ≤ H) → listHeight ts ≤ H
   | [], _ => Nat.zero_le H
@@ -135,7 +123,6 @@ lemma height_le_listHeight {c : FactorizationTree A} {ts : List (FactorizationTr
     · dsimp [listHeight]
       exact (ih hmem).trans (by omega)
 
-/-- Structural induction principle for `FactorizationTree` without mutual induction. -/
 @[elab_as_elim]
 lemma induction_on {P : FactorizationTree A → Prop} (t : FactorizationTree A)
     (h_leaf : ∀ a, P (.leaf a))
@@ -159,7 +146,6 @@ lemma induction_on {P : FactorizationTree A → Prop} (t : FactorizationTree A)
 
 variable {S : Type*} [Semigroup S]
 
-/-- Predicate verifying that a factorization tree is Ramsey for `eval`. -/
 def IsRamsey (eval : List A → S) (t : FactorizationTree A) : Prop :=
   match t with
   | leaf _ => True
@@ -179,21 +165,17 @@ lemma isRamsey_leaf (eval : List A → S) (a : A) : (leaf a).IsRamsey eval ↔ T
 lemma isRamsey_binary (eval : List A → S) (l r : FactorizationTree A) :
     (binary l r).IsRamsey eval ↔ l.IsRamsey eval ∧ r.IsRamsey eval := by rw [IsRamsey]
 
-/-- Auxiliary predicate verifying that all trees in a list are Ramsey. -/
 def listIsRamsey (eval : List A → S) : List (FactorizationTree A) → Prop
   | [] => True
   | t :: ts => IsRamsey eval t ∧ listIsRamsey eval ts
 
-/-- A leaf node is unconditionally Ramsey for any evaluation map. -/
 lemma leaf_isRamsey (eval : List A → S) (a : A) : (leaf a).IsRamsey eval := by
   simp only [isRamsey_leaf]
 
-/-- A binary node is Ramsey if and only if both children are Ramsey. -/
 lemma binary_isRamsey (eval : List A → S) {l r : FactorizationTree A}
     (hl : l.IsRamsey eval) (hr : r.IsRamsey eval) :
     (binary l r).IsRamsey eval := (isRamsey_binary eval l r).mpr ⟨hl, hr⟩
 
-/-- Characterization of `listIsRamsey` via universal quantification over tree elements. -/
 lemma listIsRamsey_iff (eval : List A → S) :
     ∀ (ts : List (FactorizationTree A)), listIsRamsey eval ts ↔ ∀ t ∈ ts, t.IsRamsey eval
   | [] => by simp [listIsRamsey]
@@ -208,26 +190,18 @@ lemma isRamsey_idempotent (eval : List A → S) (children : List (FactorizationT
   unfold IsRamsey
   rw [listIsRamsey_iff]
 
-/-- An idempotent node is Ramsey if it has at least two children, all children are Ramsey,
-and all children evaluate to the same idempotent. -/
 lemma idempotent_isRamsey (eval : List A → S) {children : List (FactorizationTree A)}
     (hlen : 2 ≤ children.length) (hlist : listIsRamsey eval children)
     {e : S} (he : e * e = e) (he_eval : ∀ t ∈ children, eval (value t) = e) :
     (idempotent children).IsRamsey eval :=
       (isRamsey_idempotent eval children).mpr ⟨hlen, hlist, e, he, he_eval⟩
 
-/-- Any element of a Ramsey list of trees is itself Ramsey. -/
-lemma isRamsey_of_mem_listIsRamsey {eval : List A → S} {cs : List (FactorizationTree A)}
-    (h : listIsRamsey eval cs) {c : FactorizationTree A} (hc : c ∈ cs) : c.IsRamsey eval :=
-  (listIsRamsey_iff eval cs).mp h c hc
-
-/-- Any letter in the concatenation of tree yields comes from some tree in the list. -/
 lemma mem_listValue {cs : List (FactorizationTree A)} {x : A}
     (h : x ∈ listValue cs) : ∃ c ∈ cs, x ∈ c.value := by
   obtain ⟨l, hl, hx⟩ := List.mem_flatten.mp h
   obtain ⟨c, hc, rfl⟩ := List.mem_map.mp hl
   exact ⟨c, hc, hx⟩
-/-- The yield of a Ramsey factorization tree is always non-empty. -/
+
 lemma tree_value_ne_nil {eval : List A → S} (t : FactorizationTree A)
     (ht : t.IsRamsey eval) : t.value ≠ [] := by
   induction t using FactorizationTree.induction_on with
@@ -250,7 +224,6 @@ end FactorizationTree
 
 section ListSlices
 
-/-- Concatenating consecutive slices of a list yields the merged slice. -/
 lemma list_drop_take_append {A : Type*} (u : List A) (i k j : ℕ) (hik : i ≤ k) (hkj : k ≤ j) :
     (u.drop i).take (k - i) ++ (u.drop k).take (j - k) = (u.drop i).take (j - i) := by
   have h_drop : u.drop k = (u.drop i).drop (k - i) := by
@@ -260,7 +233,6 @@ lemma list_drop_take_append {A : Type*} (u : List A) (i k j : ℕ) (hik : i ≤ 
     grind
   grind
 
-/-- Slicing a single element from index `i` yields `[u[i]]`. -/
 lemma list_drop_take_one {A : Type*} (u : List A) (i : ℕ) (hi : i < u.length) :
     (u.drop i).take 1 = [u[i]] :=
   congrArg (List.take 1) (List.drop_eq_getElem_cons hi)
@@ -284,8 +256,6 @@ variable (eval : List A → S)
 variable (hmul : ∀ u v, u ≠ [] → v ≠ [] → eval (u ++ v) = eval u * eval v)
 variable (u : List A)
 
-/-- Inner induction: constructs a list of trees evaluating to the same idempotent
-for points with intermediate cuts of rank at most `m`. -/
 lemma split_to_tree_inner {n : ℕ} (m : ℕ) (_ : m < n)
     (s : Split (Fin (u.length + 1)) n)
     (h_ramsey : IsRamsey (wordLabeling eval hmul u) s)
@@ -392,8 +362,6 @@ lemma split_to_tree_inner {n : ℕ} (m : ℕ) (_ : m < n)
   intro hij hsi hsj h_between
   exact H ((j : ℕ) - (i : ℕ)) i j hij rfl hsi hsj h_between
 
-/-- Outer induction: constructs a Ramsey tree of height `≤ 3 * m` for subsegments
-whose internal points have rank `< m`. -/
 lemma split_to_tree_outer {n : ℕ}
     (s : Split (Fin (u.length + 1)) n)
     (h_ramsey : IsRamsey (wordLabeling eval hmul u) s) :
@@ -557,8 +525,6 @@ end SplitToTree
 
 section ForestTheorem
 
-/-- Simon's Factorization Forest Theorem: every non-empty word admits
-a Ramsey factorization tree of height at most `3 * nS S - 1`. -/
 theorem factorization_forest_theorem {A S : Type*} [Semigroup S] [Fintype S]
     [Nonempty S]
     (eval : List A → S)
@@ -675,10 +641,6 @@ theorem factorization_forest_theorem {A S : Type*} [Semigroup S] [Fintype S]
         simp
         grind⟩
 
-/-- Convenience wrapper for `factorization_forest_theorem` using a semigroup
-homomorphism `ϕ : S →ₙ* T`.
-Every non-empty word in `S` admits a Ramsey tree of height at most `3 * nS T - 1`
-under the natural evaluation `w ↦ ϕ (listProdNE w hw)`. -/
 theorem factorization_forest_theorem_mulHom {S T : Type*} [Semigroup S] [Semigroup T]
     [Fintype T] [Nonempty T] (ϕ : S →ₙ* T) (u : List S) (hu : u ≠ []) :
     let eval_T : List S → T :=
@@ -693,8 +655,6 @@ theorem factorization_forest_theorem_mulHom {S T : Type*} [Semigroup S] [Semigro
       listProdNE_concat v w hv hw, ϕ.map_mul]
   exact factorization_forest_theorem eval_T hmul_T u hu
 
-/-- Simon's Factorization Forest Theorem with classical bound: every non-empty word admits
-a Ramsey factorization tree of height at most `3 * |S| - 1` (Colcombet line 361). -/
 theorem factorization_forest_classical_bound {A S : Type*} [Semigroup S] [Fintype S]
     [Nonempty S]
     (eval : List A → S)
@@ -709,8 +669,6 @@ theorem factorization_forest_classical_bound {A S : Type*} [Semigroup S] [Fintyp
   have h_le := nS_le_card (S := S)
   omega
 
-/-- Simon's Factorization Forest Theorem with classical bound `3 * |T| - 1` for a semigroup
-homomorphism `ϕ : S →ₙ* T`. -/
 theorem factorization_forest_classical_bound_mulHom {S T : Type*} [Semigroup S] [Semigroup T]
     [Fintype T] [Nonempty T] (ϕ : S →ₙ* T) (u : List S) (hu : u ≠ []) :
     let eval_T : List S → T :=
@@ -770,14 +728,9 @@ def lcaHeightRaw (t : FactorizationTree A) (i : ℕ) : ℕ :=
     | .inl (some (⟨c, _⟩, idx)) => lcaHeightRaw c idx
 termination_by t
 
-/-- Height of the lowest common ancestor node in `t` separating leaf `i - 1` and leaf `i`,
-bounded by `t.height`. -/
 def lcaHeight (t : FactorizationTree A) (i : ℕ) : Fin (t.height + 1) :=
   ⟨min (lcaHeightRaw t i) t.height, Nat.lt_succ_of_le (min_le_right _ _)⟩
 
-/-- The split induced by a factorization tree `t` on its cut positions `Fin (t.value.length + 1)`
-(Colcombet 2008, Lemma 3.5(a)). Each inner cut between adjacent leaves receives the height
-of their lowest common ancestor in `t`. -/
 def treeToSplit (t : FactorizationTree A) : Split (Fin (t.value.length + 1)) (t.height + 1) :=
   fun i ↦ lcaHeight t i.val
 
@@ -816,21 +769,11 @@ lemma lcaHeightRaw_le_height (t : FactorizationTree A) (i : ℕ) :
         omega
 
 @[simp]
-lemma lcaHeight_val (t : FactorizationTree A) (i : ℕ) :
-    (lcaHeight t i).val = lcaHeightRaw t i := by
-  dsimp [lcaHeight]
-  rw [min_eq_left (lcaHeightRaw_le_height t i)]
-
-@[simp]
 lemma treeToSplit_val (t : FactorizationTree A) (i : Fin (t.value.length + 1)) :
     (treeToSplit t i).val = lcaHeightRaw t i.val := by
   dsimp [treeToSplit]
-  rw [lcaHeight_val]
-
-lemma lcaHeightRaw_binary_mid (l r : FactorizationTree A) :
-    lcaHeightRaw (.binary l r) l.value.length = (binary l r).height := by
-  rw [lcaHeightRaw]
-  grind
+  dsimp [lcaHeight]
+  rw [min_eq_left (lcaHeightRaw_le_height t i)]
 
 lemma lcaHeightRaw_binary_left (l r : FactorizationTree A) {i : ℕ} (hi : i < l.value.length) :
     lcaHeightRaw (.binary l r) i = lcaHeightRaw l i := by
@@ -869,8 +812,9 @@ lemma splitRelation_binary_cases {l r : FactorizationTree A}
   by_contra h_contra
   push Not at h_contra
   rcases h_contra with ⟨hy, hx⟩
-  have h_mid_val : lcaHeightRaw (.binary l r) nl = (binary l r).height :=
-    lcaHeightRaw_binary_mid l r
+  have h_mid_val : lcaHeightRaw (.binary l r) nl = (binary l r).height := by
+    rw [lcaHeightRaw]
+    grind
   have h_sx_eq_sy : (treeToSplit (.binary l r) x).val = (treeToSplit (.binary l r) y).val :=
     congrArg Fin.val hrel.1
   rw [treeToSplit_val, treeToSplit_val] at h_sx_eq_sy
@@ -1641,7 +1585,6 @@ lemma eval_slice_of_locateCut_eq_none {S : Type*} [Semigroup S]
           exact ih (fun z hz ↦ h_eval z (.tail _ hz))
             (fun z hz ↦ h_ne z (.tail _ hz)) hxy_sub hx_tail hy_tail
 
-/-- Base case of Lemma 3.5(a): a leaf node induces a Ramsey split on its cuts. -/
 lemma treeToSplit_leaf_isRamsey {S : Type*} [Semigroup S]
     (eval : List A → S)
     (hmul : ∀ u v, u ≠ [] → v ≠ [] → eval (u ++ v) = eval u * eval v)
@@ -2245,7 +2188,6 @@ theorem tree_to_split_isRamsey {S : Type*} [Semigroup S]
           omega
         exact h_lt_cases.2 x y u v hxy huv hx_lt hrel_xy hrel_uv hrel_xu
 
-/-- Lemma 3.5(a) for a semigroup morphism `ϕ : S →ₙ* T`. -/
 theorem tree_to_split_isRamsey_mulHom {S T : Type*} [Semigroup S] [Semigroup T]
     [Nonempty T] (ϕ : S →ₙ* T) (t : FactorizationTree S)
     (ht : t.IsRamsey (fun w ↦ if hw : w = [] then Classical.arbitrary T else ϕ (listProdNE w hw))) :
