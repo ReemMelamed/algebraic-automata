@@ -626,4 +626,82 @@ theorem isGreenH_eqvClass_subsingleton_of_idempotent {S : Type u} [Semigroup S] 
 
 end GreenHCharacterization
 
+section AperiodicUpperBound
+
+open RamseySplit GreensRelations
+
+/-- In an aperiodic finite semigroup, the elements in the `H`-class of some idempotent
+are precisely the idempotents themselves, because all subgroups are trivial. -/
+lemma aperiodic_regular_dclass_elements_eq_idempotents {S : Type*} [Semigroup S] [Finite S]
+    (hAper : IsAperiodic S) (D : Set S) :
+    {x | x ∈ D ∧ ∃ e ∈ D, e * e = e ∧ IsGreenH x e} = {e | e ∈ D ∧ e * e = e} := by
+  ext x
+  simp only [Set.mem_ofPred_eq]
+  constructor
+  · rintro ⟨hxD, e, heD, he_idem, hHxe⟩
+    have he_in_H : e ∈ IsGreenH.eqvClass x := hHxe.symm
+    have h_eq := isGreenH_eqvClass_subsingleton_of_idempotent hAper he_in_H he_idem e he_in_H
+    subst h_eq
+    exact ⟨heD, he_idem⟩
+  · rintro ⟨hxD, hx_idem⟩
+    exact ⟨hxD, x, hxD, hx_idem, IsGreenH.refl x⟩
+
+open Classical in
+/-- In an aperiodic finite semigroup, for any regular D-class `D`, `nD D` is the number
+of idempotents in `D`. When `D` contains at most one idempotent, `nD D = 1`. -/
+lemma nD_eq_card_idempotents_of_isAperiodic {S : Type*} [Semigroup S] [Fintype S]
+    (hAper : IsAperiodic S) (D : Set S) (hD_reg : IsRegularDClass D) :
+    nD D = (Finset.univ.filter (fun e ↦ e ∈ D ∧ e * e = e)).card := by
+  dsimp [nD]
+  rw [ite_eq_left hD_reg]
+  congr 1
+  ext x
+  simp only [Finset.mem_filter, Finset.mem_univ, true_and]
+  have h_set := congr_arg (fun s ↦ x ∈ s) (aperiodic_regular_dclass_elements_eq_idempotents hAper D)
+  dsimp at h_set
+  exact h_set.to_iff
+
+open Classical in
+/-- If an aperiodic regular D-class has at most one idempotent, its Simon complexity `nD D` is 1. -/
+lemma nD_eq_one_of_isAperiodic_unique_idempotent {S : Type*} [Semigroup S] [Fintype S]
+    (hAper : IsAperiodic S) (D : Set S) (hD_reg : IsRegularDClass D)
+    (h_one : (Finset.univ.filter (fun e ↦ e ∈ D ∧ e * e = e)).card = 1) :
+    nD D = 1 := by
+  rw [nD_eq_card_idempotents_of_isAperiodic hAper D hD_reg, h_one]
+
+/-- Theorem 3.8 (Colcombet 2008, Upper Bound): For any finite aperiodic semigroup `S`,
+every non-empty word admits a Ramsey factorization tree of height at most `3 * |S| - 1`
+(derived from Simon's factorization forest theorem via `nS S ≤ |S|`).
+In an aperiodic semigroup, all groups are trivial, so each regular D-class satisfies N(D) = 1,
+and `nS S ≤ |S|` (Colcombet line 361). -/
+theorem aperiodic_factorization_forest_upper_bound {A S : Type*} [Semigroup S] [Fintype S]
+    [Nonempty S] (_hAper : IsAperiodic S)
+    (eval : List A → S)
+    (hmul : ∀ u v, u ≠ [] → v ≠ [] → eval (u ++ v) = eval u * eval v)
+    (u : List A) (hu : u ≠ []) :
+    ∃ t : FactorizationTree A,
+      t.value = u ∧
+      t.IsRamsey eval ∧
+      t.height ≤ 3 * Fintype.card S - 1 := by
+  exact factorization_forest_classical_bound eval hmul u hu
+
+/-- Theorem 3.8 (Upper Bound) for a semigroup homomorphism `ϕ : S →ₙ* T` into an aperiodic
+finite semigroup `T`. -/
+theorem aperiodic_factorization_forest_upper_bound_mulHom {S T : Type*} [Semigroup S] [Semigroup T]
+    [Fintype T] [Nonempty T] (hAper : IsAperiodic T) (ϕ : S →ₙ* T) (u : List S) (hu : u ≠ []) :
+    let eval_T : List S → T :=
+      fun w ↦ if hw : w = [] then Classical.arbitrary T else ϕ (listProdNE w hw)
+    ∃ t : FactorizationTree S,
+      t.value = u ∧ t.IsRamsey eval_T ∧ t.height ≤ 3 * Fintype.card T - 1 := by
+  intro eval_T
+  have hmul_T (v w : List S) (hv : v ≠ []) (hw : w ≠ []) :
+      eval_T (v ++ w) = eval_T v * eval_T w := by
+    dsimp [eval_T]
+    rw [dite_eq_right (by simp [hv, hw]), dite_eq_right hv, dite_eq_right hw,
+      listProdNE_concat v w hv hw, ϕ.map_mul]
+  exact aperiodic_factorization_forest_upper_bound hAper eval_T hmul_T u hu
+
+end AperiodicUpperBound
+
 end Aperiodic
+

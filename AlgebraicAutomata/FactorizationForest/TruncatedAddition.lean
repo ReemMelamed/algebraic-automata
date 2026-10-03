@@ -240,6 +240,180 @@ end TruncatedAdd
 
 end TruncatedAddSemigroup
 
+section SimonComplexity
+
+open GreensRelations RamseySplit TruncatedAdd
+
+variable {n : ℕ}
+
+/-- Divisibility relation in `TruncatedAdd n`: `b.val ≤ a.val`. -/
+lemma isGreenJRel_val_le (a b : TruncatedAdd n) (h : IsGreenJRel a b) : b.val ≤ a.val := by
+  have hb := b.le
+  cases h with
+  | of_eq h => rw [h]
+  | mul_left u h =>
+    have := congrArg TruncatedAdd.val h
+    rw [mul_val] at this
+    omega
+  | mul_right v h =>
+    have := congrArg TruncatedAdd.val h
+    rw [mul_val] at this
+    omega
+  | mul_both u v h =>
+    have := congrArg TruncatedAdd.val h
+    rw [mul_assoc, mul_val, mul_val] at this
+    omega
+
+lemma isGreenJRel_of_val_le (a b : TruncatedAdd n) (h : b.val ≤ a.val) : IsGreenJRel a b := by
+  rcases eq_or_lt_of_le h with heq | hlt
+  · exact .of_eq (TruncatedAdd.ext heq.symm)
+  · have h_pos : 0 < a.val - b.val := by omega
+    have h_le : a.val - b.val ≤ n := by have := a.le; omega
+    let v : TruncatedAdd n := ⟨a.val - b.val, h_pos, h_le⟩
+    have h_mul : b * v = a := by
+      ext
+      simp only [mul_val]
+      change min (b.val + (a.val - b.val)) n = a.val
+      have := a.le
+      omega
+    exact .mul_right v h_mul.symm
+
+/-- In `TruncatedAdd n`, `a ≤_J b` (meaning `IsGreenJRel a b`) if and only if `b.val ≤ a.val`. -/
+theorem isGreenJRel_iff_val_le (a b : TruncatedAdd n) : IsGreenJRel a b ↔ b.val ≤ a.val :=
+  ⟨isGreenJRel_val_le a b, isGreenJRel_of_val_le a b⟩
+
+/-- Green's J-relation on `TruncatedAdd n` is equality: each element forms its own J-class. -/
+theorem isGreenJ_iff_eq (a b : TruncatedAdd n) : IsGreenJ a b ↔ a = b := by
+  rw [IsGreenJ, isGreenJRel_iff_val_le, isGreenJRel_iff_val_le]
+  constructor
+  · rintro ⟨h1, h2⟩
+    exact TruncatedAdd.ext (by omega)
+  · rintro rfl
+    exact ⟨le_rfl, le_rfl⟩
+
+/-- In `TruncatedAdd n`, Green's D-relation is equality. -/
+theorem isGreenD_iff_eq (a b : TruncatedAdd n) : IsGreenD a b ↔ a = b := by
+  rw [isGreenD_eq_isGreenJ_of_finite]
+  exact isGreenJ_iff_eq a b
+
+/-- The D-class of `x` is the singleton `{x}`. -/
+lemma isGreenD_eqvClass_eq (x : TruncatedAdd n) :
+    IsGreenD.eqvClass x = {x} := by
+  ext z
+  simp [isGreenD_iff_eq]
+
+/-- The J-order on `TruncatedAdd n` is the reverse of the natural value order. -/
+theorem greenJClass_le_iff (a b : TruncatedAdd n) :
+    GreenJClass.mk a ≤ GreenJClass.mk b ↔ b.val ≤ a.val :=
+  isGreenJRel_iff_val_le a b
+
+theorem greenJClass_lt_iff (a b : TruncatedAdd n) :
+    GreenJClass.mk a < GreenJClass.mk b ↔ b.val < a.val := by
+  change (GreenJClass.mk a ≤ GreenJClass.mk b ∧
+    ¬(GreenJClass.mk b ≤ GreenJClass.mk a)) ↔ b.val < a.val
+  rw [greenJClass_le_iff, greenJClass_le_iff]
+  omega
+
+open Classical in
+/-- Every D-class in `TruncatedAdd n` has complexity `nD = 1`. -/
+theorem nD_truncatedAdd (x : TruncatedAdd n) : nD (IsGreenD.eqvClass x) = 1 := by
+  have h_pos := nD_pos (IsGreenD.eqvClass x) ⟨x, rfl⟩
+  have h_le := nD_le_card_j_eq x
+  have h_sub : (Finset.univ.filter (fun z ↦ GreenJClass.mk z = GreenJClass.mk x)) ⊆ {x} := by
+    intro z hz
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hz
+    rw [GreenJClass.mk_eq_mk_iff, isGreenJ_iff_eq] at hz
+    exact Finset.mem_singleton.mpr hz
+  have h_card : (Finset.univ.filter (fun z ↦ GreenJClass.mk z = GreenJClass.mk x)).card ≤ 1 :=
+    (Finset.card_le_card h_sub).trans_eq (Finset.card_singleton x)
+  have h_le_one : nD (IsGreenD.eqvClass x) ≤ 1 := h_le.trans h_card
+  omega
+
+open Classical in
+/-- The Simon complexity of each element `x` in `TruncatedAdd n` is exactly its value `x.val`. -/
+theorem nSElement_truncatedAdd (x : TruncatedAdd n) : nSElement x = x.val := by
+  induction hval : x.val using Nat.strong_induction_on generalizing x with
+  | h k ih =>
+    rw [nSElement]
+    dsimp only
+    rw [nD_truncatedAdd]
+    set strictlyAbove := Finset.univ.filter (fun y ↦ GreenJClass.mk x < GreenJClass.mk y)
+    by_cases hk : k = 1
+    · have h_empty : strictlyAbove = ∅ := by
+        rw [Finset.filter_eq_empty_iff]
+        intro y _
+        rw [greenJClass_lt_iff, hval, hk]
+        have := y.pos
+        omega
+      have h_sup : strictlyAbove.attach.sup (fun y ↦ nSElement y.1) = 0 := by
+        simp [h_empty]
+      rw [h_sup, hk]
+    · have hk_ge : 2 ≤ k := by
+        have := x.pos
+        omega
+      have h_pred_pos : 0 < k - 1 := by omega
+      have h_pred_le : k - 1 ≤ n := by
+        have := x.le
+        omega
+      let y₀ : TruncatedAdd n := ⟨k - 1, h_pred_pos, h_pred_le⟩
+      have hy₀_lt : GreenJClass.mk x < GreenJClass.mk y₀ := by
+        rw [greenJClass_lt_iff, hval]
+        dsimp [y₀]
+        omega
+      have hy₀_mem : y₀ ∈ strictlyAbove :=
+        Finset.mem_filter.mpr ⟨Finset.mem_univ _, hy₀_lt⟩
+      have hy₀_val : nSElement y₀ = k - 1 := by
+        apply ih (k - 1) (by omega) y₀ rfl
+      have h_le : strictlyAbove.attach.sup (fun y ↦ nSElement y.1) ≤ k - 1 := by
+        apply Finset.sup_le
+        rintro ⟨y, hy_mem⟩ -
+        dsimp only
+        have hy_lt : GreenJClass.mk x < GreenJClass.mk y :=
+          (Finset.mem_filter.mp hy_mem).2
+        rw [greenJClass_lt_iff, hval] at hy_lt
+        have hy_val := ih y.val (by omega) y rfl
+        omega
+      have h_ge : k - 1 ≤ strictlyAbove.attach.sup (fun y ↦ nSElement y.1) := by
+        have h_in : ⟨y₀, hy₀_mem⟩ ∈ strictlyAbove.attach := Finset.mem_attach _ _
+        have h_le_sup := Finset.le_sup (f := fun y ↦ nSElement y.1) h_in
+        dsimp only at h_le_sup
+        omega
+      have h_sup_eq : strictlyAbove.attach.sup (fun y ↦ nSElement y.1) = k - 1 :=
+        le_antisymm h_le h_ge
+      rw [h_sup_eq]
+      omega
+
+open Classical in
+/-- For the truncated addition semigroup `TruncatedAdd n`, the Simon complexity is
+exactly `n = |TruncatedAdd n|` (Colcombet line 361, Section 3.4). -/
+theorem nS_truncatedAdd (n : ℕ) (hn : 0 < n) : nS (TruncatedAdd n) = n := by
+  have instNonempty : Nonempty (TruncatedAdd n) := ⟨top hn⟩
+  apply le_antisymm
+  · have h_le := nS_le_card (S := TruncatedAdd n)
+    rw [card_eq n hn] at h_le
+    exact h_le
+  · dsimp [nS]
+    split_ifs with h
+    · have h_top_mem : nSElement (top hn) ∈
+          Finset.univ.image (fun (x : TruncatedAdd n) ↦ nSElement x) :=
+        Finset.mem_image_of_mem _ (Finset.mem_univ _)
+      have h_le := Finset.le_max' _ _ h_top_mem
+      have h_val : nSElement (top hn) = n := by
+        have := nSElement_truncatedAdd (top hn)
+        rwa [top_val] at this
+      exact le_trans (le_of_eq h_val.symm) h_le
+    · exfalso
+      apply h
+      exact ⟨nSElement (top hn), Finset.mem_image_of_mem _ (Finset.mem_univ _)⟩
+
+open Classical in
+/-- The Simon complexity equals the cardinality of the semigroup: `N(S_n) = |S_n| = n`. -/
+theorem nS_eq_card_truncatedAdd (n : ℕ) (hn : 0 < n) :
+    nS (TruncatedAdd n) = Fintype.card (TruncatedAdd n) := by
+  rw [nS_truncatedAdd n hn, card_eq n hn]
+
+end SimonComplexity
+
 section RamseyTreeConstruction
 
 open TruncatedAdd

@@ -82,6 +82,144 @@ instance instNonemptyFin_nS {S : Type*} [Semigroup S] [Fintype S] [Nonempty S] :
   Fin.pos_iff_nonempty.mp nS_pos
 
 open Classical in
+/-- In a finite semigroup, `nD D` is bounded by the cardinality of `D`. -/
+lemma nD_le_card_eqvClass (x : S) :
+    nD (IsGreenD.eqvClass x) ≤ (Finset.univ.filter (· ∈ IsGreenD.eqvClass x)).card := by
+  dsimp [nD]
+  split_ifs with hReg
+  · apply Finset.card_le_card
+    intro y hy
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hy ⊢
+    exact hy.1
+  · have hx_mem : x ∈ Finset.univ.filter (· ∈ IsGreenD.eqvClass x) := by
+      simp only [Finset.mem_filter, Finset.mem_univ, true_and]
+      exact IsGreenD.refl x
+    exact Finset.card_pos.mpr ⟨x, hx_mem⟩
+
+open Classical in
+omit [Fintype S] in
+lemma mem_isGreenD_eqvClass_iff_greenJClass_eq [Finite S] (x z : S) :
+    z ∈ IsGreenD.eqvClass x ↔ GreenJClass.mk z = GreenJClass.mk x := by
+  change IsGreenD z x ↔ GreenJClass.mk z = GreenJClass.mk x
+  rw [GreenJClass.mk_eq_mk_iff]
+  exact ⟨isGreenJ_of_isGreenD, isGreenD_of_isGreenJ⟩
+
+open Classical in
+lemma filter_isGreenD_eqvClass_eq (x : S) :
+    Finset.univ.filter (· ∈ IsGreenD.eqvClass x) =
+    Finset.univ.filter (fun z ↦ GreenJClass.mk z = GreenJClass.mk x) := by
+  ext z
+  simp only [Finset.mem_filter, Finset.mem_univ, true_and]
+  exact mem_isGreenD_eqvClass_iff_greenJClass_eq x z
+
+open Classical in
+lemma nD_le_card_j_eq (x : S) :
+    nD (IsGreenD.eqvClass x) ≤
+      (Finset.univ.filter (fun z ↦ GreenJClass.mk z = GreenJClass.mk x)).card := by
+  rw [← filter_isGreenD_eqvClass_eq]
+  exact nD_le_card_eqvClass x
+
+open Classical in
+lemma strictlyAbove_card_lt {x y : S} (hlt : GreenJClass.mk x < GreenJClass.mk y) :
+    (Finset.univ.filter (fun z ↦ GreenJClass.mk y < GreenJClass.mk z)).card <
+    (Finset.univ.filter (fun z ↦ GreenJClass.mk x < GreenJClass.mk z)).card := by
+  have h_le : Finset.univ.filter (fun (z : S) => GreenJClass.mk y < GreenJClass.mk z) ⊆
+              Finset.univ.filter (fun (z : S) => GreenJClass.mk x < GreenJClass.mk z) := by
+    intro z hz
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hz ⊢
+    exact hlt.trans hz
+  have h_ne' : Finset.univ.filter (fun (z : S) => GreenJClass.mk y < GreenJClass.mk z) ≠
+              Finset.univ.filter (fun (z : S) => GreenJClass.mk x < GreenJClass.mk z) := by
+    intro heq
+    have h_mem : y ∈ Finset.univ.filter (fun (z : S) => GreenJClass.mk x < GreenJClass.mk z) := by
+      simp only [Finset.mem_filter, Finset.mem_univ, true_and]
+      exact hlt
+    rw [← heq] at h_mem
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and] at h_mem
+    exact lt_irrefl _ h_mem
+  exact Finset.card_lt_card (lt_of_le_of_ne h_le h_ne')
+
+open Classical in
+theorem nSElement_le_card_ge_aux (n : ℕ) (x : S)
+    (hn : (Finset.univ.filter (fun y ↦ GreenJClass.mk x < GreenJClass.mk y)).card ≤ n) :
+    nSElement x ≤ (Finset.univ.filter (fun z ↦ GreenJClass.mk x ≤ GreenJClass.mk z)).card := by
+  induction n using Nat.strong_induction_on generalizing x with
+  | h n ih =>
+    rw [nSElement]
+    dsimp only
+    set currentCost := nD (IsGreenD.eqvClass x)
+    set strictlyAbove := Finset.univ.filter (fun (y : S) => GreenJClass.mk x < GreenJClass.mk y)
+    set maxAbove := strictlyAbove.attach.sup (fun ⟨y, _hy⟩ => nSElement y)
+    set A := Finset.univ.filter (fun z ↦ GreenJClass.mk z = GreenJClass.mk x)
+    have h_nD : currentCost ≤ A.card := nD_le_card_j_eq x
+    set Target := Finset.univ.filter (fun z ↦ GreenJClass.mk x ≤ GreenJClass.mk z)
+    have h_A_sub : A ⊆ Target := by
+      intro z hz
+      have h_eq : GreenJClass.mk z = GreenJClass.mk x := (Finset.mem_filter.mp hz).2
+      exact Finset.mem_filter.mpr ⟨Finset.mem_univ _, by rw [h_eq]⟩
+    have h_A_le : A.card ≤ Target.card := Finset.card_le_card h_A_sub
+    have h_sup_le : maxAbove ≤ Target.card - A.card := by
+      apply Finset.sup_le
+      rintro ⟨y, hy_mem⟩ -
+      have hy_lt : GreenJClass.mk x < GreenJClass.mk y :=
+        (Finset.mem_filter.mp hy_mem).2
+      have h_card_y := strictlyAbove_card_lt hy_lt
+      have h_y_lt_n : (Finset.univ.filter (fun z ↦ GreenJClass.mk y < GreenJClass.mk z)).card < n :=
+        h_card_y.trans_le hn
+      have ih_y := ih (Finset.univ.filter (fun z ↦ GreenJClass.mk y < GreenJClass.mk z)).card
+        h_y_lt_n y le_rfl
+      set B := Finset.univ.filter (fun z ↦ GreenJClass.mk y ≤ GreenJClass.mk z)
+      have h_disj : Disjoint A B := by
+        rw [Finset.disjoint_filter]
+        intro z _ hzA hzB
+        rw [hzA] at hzB
+        exact lt_irrefl _ (hy_lt.trans_le hzB)
+      have h_sub : A ∪ B ⊆ Target := by
+        intro z hz
+        rcases Finset.mem_union.mp hz with hA | hB
+        · have h_eq := (Finset.mem_filter.mp hA).2
+          exact Finset.mem_filter.mpr ⟨Finset.mem_univ _, by rw [h_eq]⟩
+        · have h_le := (Finset.mem_filter.mp hB).2
+          exact Finset.mem_filter.mpr ⟨Finset.mem_univ _, hy_lt.le.trans h_le⟩
+      have h_union_card : (A ∪ B).card = A.card + B.card :=
+        Finset.card_union_of_disjoint h_disj
+      have h_card_le := Finset.card_le_card h_sub
+      rw [h_union_card] at h_card_le
+      have : nSElement y ≤ Target.card - A.card := by omega
+      exact this
+    change currentCost + maxAbove ≤ Target.card
+    omega
+
+open Classical in
+/-- The Simon complexity of `x ∈ S` is bounded by the number of elements with J-class ≥ x. -/
+theorem nSElement_le_card_ge (x : S) :
+    nSElement x ≤ (Finset.univ.filter (fun z ↦ GreenJClass.mk x ≤ GreenJClass.mk z)).card :=
+  nSElement_le_card_ge_aux _ x le_rfl
+
+open Classical in
+/-- Simon complexity of an element is bounded by the cardinality of `S`. -/
+theorem nSElement_le_card (x : S) : nSElement x ≤ Fintype.card S := by
+  apply (nSElement_le_card_ge x).trans
+  have h_sub : Finset.univ.filter (fun z ↦ GreenJClass.mk x ≤ GreenJClass.mk z) ⊆ Finset.univ :=
+    Finset.filter_subset _ _
+  have h_le := Finset.card_le_card h_sub
+  rw [Finset.card_univ] at h_le
+  exact h_le
+
+open Classical in
+/-- The Simon complexity `nS S` is bounded by the cardinality of `S` (Colcombet line 361). -/
+theorem nS_le_card : nS S ≤ Fintype.card S := by
+  dsimp [nS]
+  split_ifs with h
+  · have h_mem := Finset.max'_mem _ h
+    rw [Finset.mem_image] at h_mem
+    obtain ⟨x, _, hx_eq⟩ := h_mem
+    rw [← hx_eq]
+    exact nSElement_le_card x
+  · exact Nat.zero_le _
+
+
+open Classical in
 /-- Constructs jump points partitioning the domain, stepping to the minimal `y > x`
 with `IsGreenD (σ(x, y)) a`. -/
 noncomputable abbrev buildXSeq (a : S) {α : Type*} [LinearOrder α] [Fintype α]

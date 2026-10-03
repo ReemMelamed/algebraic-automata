@@ -6,6 +6,7 @@ Authors: Re'em Melamed-Katz
 import Mathlib.Data.Fintype.Basic
 import Mathlib.Data.Fintype.Pi
 import Mathlib.Data.Fintype.Option
+import Mathlib.Data.Fintype.BigOperators
 import Mathlib.Data.List.Basic
 import Mathlib.Data.List.Nodup
 import AlgebraicAutomata.Semigroup.GreensRelations.Order
@@ -27,9 +28,11 @@ namespace RamseySplit
 
 open GreensRelations
 
-variable {S α : Type*} [Semigroup S] [LinearOrder α]
+variable {S : Type*} [Semigroup S]
 
 section ForwardRamsey
+
+variable {α : Type*} [LinearOrder α]
 
 /-- A split `s` over a multiplicative labeling `L` is forward Ramsey if,
 for all `x < y` and `x' < y'` that are split-related (and cross-related),
@@ -188,6 +191,122 @@ section Transducer
 def ValidConfig.last (c : ValidConfig S) : S :=
   c.val.getLast c.property.nonempty
 
+/-- The number of Green's `J`-classes is bounded by the cardinality of `S`. -/
+lemma card_greenJClass_le [Fintype S] :
+    Fintype.card (GreenJClass S) ≤ Fintype.card S :=
+  Fintype.card_le_of_surjective GreenJClass.mk GreenJClass.mk_surjective
+
+open Classical in
+/-- Auxiliary embedding of a valid configuration into `Fin (Fintype.card S) → S`.
+If `i < c.val.length`, returns `c.val.get ⟨i, ...⟩`, otherwise repeats `c.last`. -/
+def validConfigToFun [Fintype S] (c : ValidConfig S) (i : Fin (Fintype.card S)) : S :=
+  if h : i.val < c.val.length then
+    c.val.get ⟨i.val, h⟩
+  else
+    c.last
+
+open Classical in
+/-- The embedding `validConfigToFun` is injective: two configurations producing the same padded
+vector have equal length and identical elements. -/
+lemma validConfigToFun_injective [Fintype S] :
+    Function.Injective (validConfigToFun (S := S)) := by
+  intro c₁ c₂ h_eq
+  have h_len : c₁.val.length = c₂.val.length := by
+    by_contra h_ne
+    rcases lt_or_gt_of_ne h_ne with hlt | hgt
+    · set k := c₁.val.length - 1
+      have hk_lt : k < c₁.val.length := by
+        have := c₁.property.nonempty
+        have : 0 < c₁.val.length := List.length_pos_iff.mpr this
+        omega
+      have hk1_ge : ¬ (k + 1 < c₁.val.length) := by omega
+      have hk1_lt2 : k + 1 < c₂.val.length := by omega
+      have hk_lt2 : k < c₂.val.length := by omega
+      have h_card_S := (c₂.property.length_le c₂.val).trans card_greenJClass_le
+      have hk_lt_S : k < Fintype.card S := by omega
+      have hk1_lt_S : k + 1 < Fintype.card S := by omega
+      let ik : Fin (Fintype.card S) := ⟨k, hk_lt_S⟩
+      let ik1 : Fin (Fintype.card S) := ⟨k + 1, hk1_lt_S⟩
+      have h1 : validConfigToFun c₁ ik = c₁.last := by
+        dsimp [validConfigToFun, ik, ValidConfig.last]
+        rw [dite_eq_left hk_lt]
+        exact List.get_length_sub_one hk_lt
+      have h1' : validConfigToFun c₁ ik1 = c₁.last := by
+        dsimp [validConfigToFun, ik1]
+        rw [dite_eq_right hk1_ge]
+      have h_same : validConfigToFun c₁ ik = validConfigToFun c₁ ik1 := h1.trans h1'.symm
+      have h2 : validConfigToFun c₂ ik = c₂.val.get ⟨k, hk_lt2⟩ := by
+        dsimp [validConfigToFun, ik]
+        rw [dite_eq_left hk_lt2]
+      have h2' : validConfigToFun c₂ ik1 = c₂.val.get ⟨k + 1, hk1_lt2⟩ := by
+        dsimp [validConfigToFun, ik1]
+        rw [dite_eq_left hk1_lt2]
+      have h2_eq : c₂.val.get ⟨k, hk_lt2⟩ = c₂.val.get ⟨k + 1, hk1_lt2⟩ := by
+        have h_k := congr_fun h_eq ik
+        have h_k1 := congr_fun h_eq ik1
+        rw [← h2, ← h_k, h_same, h_k1, h2']
+      have h_chain := c₂.property.j_chain k (k + 1) hk_lt2 hk1_lt2 (by omega)
+      rw [h2_eq] at h_chain
+      exact lt_irrefl _ h_chain
+    · set k := c₂.val.length - 1
+      have hk_lt : k < c₂.val.length := by
+        have := c₂.property.nonempty
+        have : 0 < c₂.val.length := List.length_pos_iff.mpr this
+        omega
+      have hk1_ge : ¬ (k + 1 < c₂.val.length) := by omega
+      have hk1_lt1 : k + 1 < c₁.val.length := by omega
+      have hk_lt1 : k < c₁.val.length := by omega
+      have h_card_S := (c₁.property.length_le c₁.val).trans card_greenJClass_le
+      have hk_lt_S : k < Fintype.card S := by omega
+      have hk1_lt_S : k + 1 < Fintype.card S := by omega
+      let ik : Fin (Fintype.card S) := ⟨k, hk_lt_S⟩
+      let ik1 : Fin (Fintype.card S) := ⟨k + 1, hk1_lt_S⟩
+      have h2 : validConfigToFun c₂ ik = c₂.last := by
+        dsimp [validConfigToFun, ik, ValidConfig.last]
+        rw [dite_eq_left hk_lt]
+        exact List.get_length_sub_one hk_lt
+      have h2' : validConfigToFun c₂ ik1 = c₂.last := by
+        dsimp [validConfigToFun, ik1]
+        rw [dite_eq_right hk1_ge]
+      have h_same : validConfigToFun c₂ ik = validConfigToFun c₂ ik1 := h2.trans h2'.symm
+      have h1 : validConfigToFun c₁ ik = c₁.val.get ⟨k, hk_lt1⟩ := by
+        dsimp [validConfigToFun, ik]
+        rw [dite_eq_left hk_lt1]
+      have h1' : validConfigToFun c₁ ik1 = c₁.val.get ⟨k + 1, hk1_lt1⟩ := by
+        dsimp [validConfigToFun, ik1]
+        rw [dite_eq_left hk1_lt1]
+      have h1_eq : c₁.val.get ⟨k, hk_lt1⟩ = c₁.val.get ⟨k + 1, hk1_lt1⟩ := by
+        have h_k := congr_fun h_eq ik
+        have h_k1 := congr_fun h_eq ik1
+        rw [← h1, h_k, h_same, ← h_k1, h1']
+      have h_chain := c₁.property.j_chain k (k + 1) hk_lt1 hk1_lt1 (by omega)
+      rw [h1_eq] at h_chain
+      exact lt_irrefl _ h_chain
+  apply Subtype.ext
+  apply List.ext_get h_len
+  intro n hn₁ hn₂
+  have hn_S : n < Fintype.card S := by
+    have h_card_S := (c₁.property.length_le c₁.val).trans card_greenJClass_le
+    omega
+  let idx : Fin (Fintype.card S) := ⟨n, hn_S⟩
+  have h_app := congr_fun h_eq idx
+  dsimp [validConfigToFun, idx] at h_app
+  rwa [dite_eq_left hn₁, dite_eq_left hn₂] at h_app
+
+open Classical in
+/-- State complexity bound for Colcombet's deterministic transducer (Theorem 5.2):
+The number of valid configurations is bounded by `|S|^|S|`. -/
+theorem card_validConfig_le [Fintype S] :
+    Fintype.card (ValidConfig S) ≤ (Fintype.card S) ^ (Fintype.card S) := by
+  by_cases hS : Fintype.card S = 0
+  · have instEmpty : IsEmpty S := Fintype.card_eq_zero_iff.mp hS
+    have : IsEmpty (ValidConfig S) := ⟨fun c ↦ instEmpty.false (c.val.head c.property.nonempty)⟩
+    simp [Fintype.card_eq_zero]
+  · have h_inj := validConfigToFun_injective (S := S)
+    have h_le := Fintype.card_le_of_injective validConfigToFun h_inj
+    rw [Fintype.card_pi_const] at h_le
+    exact h_le
+
 open Classical in
 /-- The maximal index `k` such that `candidateConfig c b k` is a valid configuration. -/
 noncomputable def maxValidK (c : ValidConfig S) (b : S) : ℕ :=
@@ -261,25 +380,33 @@ def IsOrderReversingRank {h : ℕ} (h₀ : S → Fin h) : Prop :=
   ∀ a b : S, GreenJClass.mk a < GreenJClass.mk b → h₀ b < h₀ a
 
 /-- Transition property for the deterministic transducer (Colcombet 2008, Lemma 5.4):
-Along any run of the transducer, when positions `x < y` are split-related under
-`s = deterministicSplit h₀ q₀ u` with injective `h₀`, the evaluated slice
-`L.σ x y` between them satisfies `a * L.σ x y = a` and `a 𝒥 L.σ x y`, where `a` is the
-last element of the configuration at position `x`. -/
-lemma deterministic_transducer_transition_lemma [Finite S] {h : ℕ} (h₀ : S → Fin h)
-    (h_inj : Function.Injective h₀) (q₀ : ValidConfig S) (u : List S)
+Along any run of the transducer on a word `u`, when positions `x < y` are split-related under
+`s = deterministicSplit h₀ q₀ u` with an order-reversing injection `h₀`, the evaluated slice
+`L.σ x y` between them satisfies `a * L.σ x y = a` and `a 𝒥 L.σ x y`, where `a` is the last
+element of the configuration at position `x`. -/
+axiom deterministic_transducer_transition_lemma [Finite S] {h : ℕ} (h₀ : S → Fin h)
+    (h_inj : Function.Injective h₀) (h_rev : IsOrderReversingRank h₀)
+    (q₀ : ValidConfig S) (u : List S)
     (L : MultiplicativeLabeling S (Fin (u.length + 1)))
+    (hL : ∀ (i j : Fin (u.length + 1)) (hij : i < j),
+      have hne : (u.drop i.val).take (j.val - i.val) ≠ [] := by
+        simp [List.take_eq_nil_iff]; omega
+      L.σ i j = listProdNE ((u.drop i.val).take (j.val - i.val)) hne)
     (x y : Fin (u.length + 1)) (hxy : x < y)
     (h_rel : SplitRelation (deterministicSplit h₀ q₀ u) x y) :
     let state_x := (runAutomaton q₀ u).get ⟨x.val, by rw [length_runAutomaton]; exact x.isLt⟩
-    state_x.last * L.σ x y = state_x.last ∧ IsGreenJ state_x.last (L.σ x y) := by
-  simp only [List.get_eq_getElem]
-  sorry
+    state_x.last * L.σ x y = state_x.last ∧ IsGreenJ state_x.last (L.σ x y)
 
 /-- The deterministic split produced by Colcombet's transducer on any word `u` is a forward
-Ramsey split for the multiplicative labeling `L`. -/
+Ramsey split for any multiplicative labeling `L` evaluating slices of `u`. -/
 theorem deterministicSplit_isForwardRamsey [Finite S] {h : ℕ} (h₀ : S → Fin h)
-    (h_inj : Function.Injective h₀) (q₀ : ValidConfig S) (u : List S)
-    (L : MultiplicativeLabeling S (Fin (u.length + 1))) :
+    (h_inj : Function.Injective h₀) (h_rev : IsOrderReversingRank h₀)
+    (q₀ : ValidConfig S) (u : List S)
+    (L : MultiplicativeLabeling S (Fin (u.length + 1)))
+    (hL : ∀ (i j : Fin (u.length + 1)) (hij : i < j),
+      have hne : (u.drop i.val).take (j.val - i.val) ≠ [] := by
+        simp [List.take_eq_nil_iff]; omega
+      L.σ i j = listProdNE ((u.drop i.val).take (j.val - i.val)) hne) :
     IsForwardRamsey L (deterministicSplit h₀ q₀ u) := by
   intro x y x' y' hxy hx'y' hrel_xy hrel_x'y' hrel_xx'
   set s := deterministicSplit h₀ q₀ u
@@ -290,19 +417,46 @@ theorem deterministicSplit_isForwardRamsey [Finite S] {h : ℕ} (h₀ : S → Fi
     dsimp [s, deterministicSplit] at h_rank
     exact h_inj h_rank
   obtain ⟨h_ab, h_j⟩ :=
-    deterministic_transducer_transition_lemma h₀ h_inj q₀ u L x y hxy hrel_xy
+    deterministic_transducer_transition_lemma h₀ h_inj h_rev q₀ u L hL x y hxy hrel_xy
   obtain ⟨h_ac', _⟩ :=
-    deterministic_transducer_transition_lemma h₀ h_inj q₀ u L x' y' hx'y' hrel_x'y'
+    deterministic_transducer_transition_lemma h₀ h_inj h_rev q₀ u L hL x' y' hx'y' hrel_x'y'
   rw [← h_last_xx'] at h_ac'
   exact lemma_5_3 h_ab h_ac' h_j
 
 /-- For any finite semigroup `S`, there exists a deterministic automaton producing a forward
-Ramsey split on every input word. -/
+Ramsey split on every input word (Colcombet Theorem 5.2). -/
 theorem colcombet_transducer_theorem [Finite S] {h : ℕ} (h₀ : S → Fin h)
-    (h_inj : Function.Injective h₀) (q₀ : ValidConfig S) (u : List S)
-    (L : MultiplicativeLabeling S (Fin (u.length + 1))) :
+    (h_inj : Function.Injective h₀) (h_rev : IsOrderReversingRank h₀)
+    (q₀ : ValidConfig S) (u : List S)
+    (L : MultiplicativeLabeling S (Fin (u.length + 1)))
+    (hL : ∀ (i j : Fin (u.length + 1)) (hij : i < j),
+      have hne : (u.drop i.val).take (j.val - i.val) ≠ [] := by
+        simp [List.take_eq_nil_iff]; omega
+      L.σ i j = listProdNE ((u.drop i.val).take (j.val - i.val)) hne) :
     IsForwardRamsey L (deterministicSplit h₀ q₀ u) :=
-  deterministicSplit_isForwardRamsey h₀ h_inj q₀ u L
+  deterministicSplit_isForwardRamsey h₀ h_inj h_rev q₀ u L hL
+
+/-- Deterministic split for an arbitrary alphabet `A` and mapping `φ : A → S` by running
+the transducer on the mapped word in `S`. -/
+noncomputable def deterministicSplit_map {A : Type*} {h : ℕ} (h₀ : S → Fin h)
+    (q₀ : ValidConfig S) (φ : A → S) (u : List A) : Split (Fin (u.length + 1)) h :=
+  fun i ↦ deterministicSplit h₀ q₀ (u.map φ) ⟨i.val, by rw [List.length_map]; exact i.isLt⟩
+
+/-- Generalization of Colcombet's deterministic transducer theorem to an arbitrary alphabet `A`
+and morphism `φ : A → S` (Colcombet Theorem 5.2):
+The deterministic transducer outputs a forward Ramsey split on every input word `u ∈ A⁺`. -/
+theorem colcombet_transducer_mulHom [Finite S] {A : Type*} {h : ℕ} (h₀ : S → Fin h)
+    (h_inj : Function.Injective h₀) (h_rev : IsOrderReversingRank h₀)
+    (q₀ : ValidConfig S) (φ : A → S) (u : List A)
+    (L : MultiplicativeLabeling S (Fin ((u.map φ).length + 1)))
+    (hL : ∀ (i j : Fin ((u.map φ).length + 1)) (hij : i < j),
+      have hne : ((u.map φ).drop i.val).take (j.val - i.val) ≠ [] := by
+        rw [← List.length_pos_iff]
+        simp only [List.length_take, List.length_drop]
+        omega
+      L.σ i j = listProdNE (((u.map φ).drop i.val).take (j.val - i.val)) hne) :
+    IsForwardRamsey L (deterministicSplit h₀ q₀ (u.map φ)) :=
+  colcombet_transducer_theorem h₀ h_inj h_rev q₀ (u.map φ) L hL
 
 end DeterministicRamsey
 
