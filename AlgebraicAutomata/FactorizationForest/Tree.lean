@@ -575,8 +575,12 @@ theorem factorization_forest_theorem {A S : Type*} [Semigroup S] [Fintype S]
         constructor
         · rw [FactorizationTree.value_idempotent]
           exact h_trees_val
+        constructor
         · rw [FactorizationTree.isRamsey_idempotent]
-          grind
+          exact ⟨h_len2, h_trees_ramsey, _, h_idem_ir, h_trees_eval⟩
+        · rw [FactorizationTree.height_idempotent]
+          have h_le := FactorizationTree.listHeight_le trees (fun t ht => h_trees_height t ht)
+          omega
     obtain ⟨t_mid, ht_mid_val, ht_mid_ramsey, _⟩ := h_mid
     have ht_val : (FactorizationTree.binary t_mid t_krj).value = u := by
       simp [ht_mid_val, ht_krj_val, list_drop_take_append u i.val k_r.val j.val hikr.le hkrj.le,
