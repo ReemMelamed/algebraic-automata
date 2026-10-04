@@ -448,13 +448,15 @@ lemma split_to_tree_outer {n : ℕ}
             obtain ⟨trees, _, h_trees_val, h_trees_ramsey, h_trees_eval,
                     h_trees_height, h_trees_len⟩ := h_inner
             have h_len2 : 2 ≤ trees.length := h_trees_len ⟨k_2, hk12, hk2r, hk2_prop⟩
-            refine ⟨.idempotent trees, ?_, ?_, ?_⟩
+            use .idempotent trees
+            constructor
             · rw [FactorizationTree.value_idempotent]
               exact h_trees_val
+            constructor
             · rw [FactorizationTree.isRamsey_idempotent]
               exact ⟨h_len2, h_trees_ramsey, _, h_idem_1r, h_trees_eval⟩
             · rw [FactorizationTree.height_idempotent]
-              have h_h_le := FactorizationTree.listHeight_le trees h_trees_height
+              have h_le := FactorizationTree.listHeight_le trees (fun t ht => h_trees_height t ht)
               omega
         obtain ⟨t_mid, ht_mid_val, ht_mid_ramsey, _⟩ := h_mid
         have ht_val : (FactorizationTree.binary t_ik1 (.binary t_mid t_krj)).value =
@@ -569,22 +571,18 @@ theorem factorization_forest_theorem {A S : Type*} [Semigroup S] [Fintype S]
         obtain ⟨trees, _, h_trees_val, h_trees_ramsey, h_trees_eval,
                 h_trees_height, h_trees_len⟩ := h_inner
         have h_len2 : 2 ≤ trees.length := h_trees_len ⟨k_2, hik2, hk2r, hk2_prop⟩
-        refine ⟨.idempotent trees, ?_, ?_, ?_⟩
+        use .idempotent trees
+        constructor
         · rw [FactorizationTree.value_idempotent]
           exact h_trees_val
         · rw [FactorizationTree.isRamsey_idempotent]
-          exact ⟨h_len2, h_trees_ramsey, _, h_idem_ir, h_trees_eval⟩
-        · rw [FactorizationTree.height_idempotent]
-          have h_h_le := FactorizationTree.listHeight_le trees h_trees_height
-          omega
+          grind
     obtain ⟨t_mid, ht_mid_val, ht_mid_ramsey, _⟩ := h_mid
     have ht_val : (FactorizationTree.binary t_mid t_krj).value = u := by
       simp [ht_mid_val, ht_krj_val, list_drop_take_append u i.val k_r.val j.val hikr.le hkrj.le,
         h_u_val]
     exact ⟨.binary t_mid t_krj, ht_val,
-      FactorizationTree.binary_isRamsey eval ht_mid_ramsey ht_krj_ramsey, by
-        simp
-        grind⟩
+      FactorizationTree.binary_isRamsey eval ht_mid_ramsey ht_krj_ramsey, by simp; grind⟩
 
 theorem factorization_forest_theorem_mulHom {S T : Type*} [Semigroup S] [Semigroup T]
     [Fintype T] [Nonempty T] (ϕ : S →ₙ* T) (u : List S) (hu : u ≠ []) :
@@ -610,7 +608,7 @@ theorem factorization_forest_classical_bound {A S : Type*} [Semigroup S] [Fintyp
       t.IsRamsey eval ∧
       t.height ≤ 3 * Fintype.card S - 1 := by
   obtain ⟨t, ht_val, ht_ramsey, ht_ht⟩ := factorization_forest_theorem eval hmul u hu
-  refine ⟨t, ht_val, ht_ramsey, ?_⟩
+  use t, ht_val, ht_ramsey
   have h_le := nS_le_card (S := S)
   omega
 
@@ -795,7 +793,7 @@ lemma splitRelation_binary_left {l r : FactorizationTree A}
         have := y.isLt
         omega⟩ := by
   have hx : x.val < l.value.length := by omega
-  refine ⟨?_, ?_⟩
+  constructor
   · have h1 := congrArg Fin.val hrel.1
     rw [treeToSplit_val, treeToSplit_val] at h1
     rw [lcaHeightRaw_binary_left l r hx, lcaHeightRaw_binary_left l r hy] at h1
@@ -852,7 +850,7 @@ lemma splitRelation_binary_right {l r : FactorizationTree A}
         simp [value_binary] at this
         omega⟩ := by
   have hy : l.value.length < y.val := by omega
-  refine ⟨?_, ?_⟩
+  constructor
   · have h1 := congrArg Fin.val hrel.1
     rw [treeToSplit_val, treeToSplit_val] at h1
     rw [lcaHeightRaw_binary_right l r hx, lcaHeightRaw_binary_right l r hy] at h1
@@ -1119,7 +1117,7 @@ lemma splitRelation_idempotent_left {c : FactorizationTree A}
         have := y.isLt
         omega⟩ := by
   have hx : x.val < c.value.length := by omega
-  refine ⟨?_, ?_⟩
+  constructor
   · have h1 := congrArg Fin.val hrel.1
     rw [treeToSplit_val, treeToSplit_val] at h1
     rw [lcaHeightRaw_idempotent_cons_left c cs hx,
@@ -1268,7 +1266,7 @@ lemma splitRelation_idempotent_cons_right {c : FactorizationTree A}
   have hy_lt : (treeToSplit (.idempotent (c :: cs)) y).val < (idempotent (c :: cs)).height := by
     have h1 := congrArg Fin.val hrel.1
     exact h1.symm ▸ hx_lt
-  refine ⟨?_, ?_⟩
+  constructor
   · have h1 := congrArg Fin.val hrel.1
     have hx_eq := H_val x hx hx_lt
     have hy_eq := H_val y hy hy_lt
@@ -1536,7 +1534,7 @@ lemma idempotent_of_lt {S : Type*} [Semigroup S]
           SplitRelation (treeToSplit (.idempotent [c])) a b →
           SplitRelation (treeToSplit c) (toC a) (toC b) := by
         intro a b hrel
-        refine ⟨?_, ?_⟩
+        constructor
         · have h1 := congrArg Fin.val hrel.1
           rw [h_split_val a, h_split_val b] at h1
           exact Fin.ext h1
@@ -1560,7 +1558,7 @@ lemma idempotent_of_lt {S : Type*} [Semigroup S]
             rw [min_eq_right hba] at h_bet_val
             rw [h_split_val b] at h_bet_val
             exact (min_eq_right hba_c).symm ▸ h_bet_val
-      refine ⟨?_, ?_⟩
+      constructor
       · intro x y z hxy hyz hx_lt hrel_xy hrel_yz
         have hxy_c : toC x < toC y := hxy
         have hyz_c : toC y < toC z := hyz
@@ -1580,7 +1578,7 @@ lemma idempotent_of_lt {S : Type*} [Semigroup S]
         have h_wl_xy := wordLabeling_idempotent_left eval hmul c [] x y hxy.le hy_le
         have h_wl_uv := wordLabeling_idempotent_left eval hmul c [] u v huv.le hv_le
         exact h_wl_xy ▸ h_wl_uv ▸ ih_c.2 _ _ _ _ hxy_c huv_c hrel_xy_c hrel_uv_c hrel_xu_c
-    · refine ⟨?_, ?_⟩
+    · constructor
       · intro x y z hxy hyz hx_lt hrel_xy hrel_yz
         rcases splitRelation_idempotent_cases hcs_emp hxy hrel_xy with hy_lt | hx_ge
         · rcases splitRelation_idempotent_cases hcs_emp hyz hrel_yz with hz_lt | hy_ge
@@ -1823,7 +1821,7 @@ theorem tree_to_split_isRamsey {S : Type*} [Semigroup S]
     rw [isRamsey_binary] at ht
     have ihl := ih_l eval hmul ht.1
     have ihr := ih_r eval hmul ht.2
-    refine ⟨?_, ?_⟩
+    constructor
     · intro x y z hxy hyz hrel_xy hrel_yz
       rcases splitRelation_binary_cases hxy hrel_xy with hy_lt | hx_gt <;>
       rcases splitRelation_binary_cases hyz hrel_yz with hz_lt | hy_gt <;>
@@ -1886,11 +1884,8 @@ theorem tree_to_split_isRamsey {S : Type*} [Semigroup S]
     have h_lt {w} (hw : (treeToSplit (.idempotent children) w).val ≠ (idempotent children).height) :
         (treeToSplit (.idempotent children) w).val < (idempotent children).height := by
       have := lcaHeightRaw_le_height (.idempotent children) w.val; simp at *; omega
-    refine ⟨?_, ?_⟩
-    · intro x y z hxy hyz hrel_xy hrel_yz
-      by_cases hx : (treeToSplit (.idempotent children) x).val = (idempotent children).height
-      · rw [h_eval_e hxy hrel_xy hx, he]
-      · exact h_lt_cases.1 x y z hxy hyz (h_lt hx) hrel_xy hrel_yz
+    constructor
+    · grind
     · intro x y u v hxy huv hrel_xy hrel_uv hrel_xu
       by_cases hx : (treeToSplit (.idempotent children) x).val = (idempotent children).height
       · have hu : (treeToSplit (.idempotent children) u).val = (idempotent children).height := by
