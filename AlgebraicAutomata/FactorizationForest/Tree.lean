@@ -1417,18 +1417,6 @@ lemma splitRelation_idempotent_cons_right {c : FactorizationTree A}
       omega
     rw [h_min_small]
     exact h_bet_val
-lemma locateCut_nil (i : ℕ) : locateCut ([] : List (FactorizationTree A)) i = .inr () := rfl
-
-lemma locateCut_cons_cons (c c' : FactorizationTree A) (cs : List (FactorizationTree A)) (i : ℕ) :
-    locateCut (c :: c' :: cs) i =
-      if i < c.value.length then .inl (some (⟨c, by simp⟩, i))
-      else if i = c.value.length then .inl none
-      else match locateCut (c' :: cs) (i - c.value.length) with
-      | .inr () => .inr ()
-      | .inl none => .inl none
-      | .inl (some (⟨c'', hc''⟩, idx)) => .inl (some (⟨c'', by simp [hc'']⟩, idx)) := by
-          simp only [locateCut]
-          grind
 
 lemma locateCut_singleton_ne_inl_none (c : FactorizationTree A) (i : ℕ) :
     locateCut [c] i ≠ .inl none := by
@@ -1454,87 +1442,6 @@ lemma locateCut_cons_cons_inl_none_iff (c c' : FactorizationTree A)
         simp [h_gt]
       | some pair =>
         simp [h2]
-
-lemma eval_slice_of_locateCut_eq_none {S : Type*} [Semigroup S]
-    (eval : List A → S)
-    (hmul : ∀ u v, u ≠ [] → v ≠ [] → eval (u ++ v) = eval u * eval v)
-    (e : S) (he : e * e = e)
-    (cs : List (FactorizationTree A))
-    (h_eval : ∀ c ∈ cs, eval c.value = e)
-    (h_ne : ∀ c ∈ cs, c.value ≠ [])
-    {x y : ℕ} (hxy : x < y)
-    (hx : locateCut cs x = .inl none)
-    (hy : locateCut cs y = .inl none) :
-    eval (((listValue cs).drop x).take (y - x)) = e := by
-  have h_eval_take (ts : List (FactorizationTree A))
-      (h_eval' : ∀ c ∈ ts, eval c.value = e)
-      (h_ne' : ∀ c ∈ ts, c.value ≠ [])
-      {i : ℕ} (hi : locateCut ts i = .inl none) :
-      eval ((listValue ts).take i) = e := by
-    induction ts generalizing i with
-    | nil =>
-      rw [locateCut_nil] at hi
-      cases hi
-    | cons c cs' ih =>
-      cases cs' with
-      | nil =>
-        exact False.elim (locateCut_singleton_ne_inl_none c i hi)
-      | cons c' cs'' =>
-        rw [locateCut_cons_cons_inl_none_iff] at hi
-        rcases hi with rfl | ⟨h_gt, h_tail⟩
-        · rw [listValue_cons]
-          have h_take : (c.value ++ listValue (c' :: cs'')).take c.value.length = c.value :=
-            List.take_left
-          rw [h_take]
-          exact h_eval' c (.head _)
-        · rw [listValue_cons]
-          have ih_res := ih (fun x hx ↦ h_eval' x (.tail _ hx))
-            (fun x hx ↦ h_ne' x (.tail _ hx)) h_tail
-          have h_take : (c.value ++ listValue (c' :: cs'')).take i =
-              c.value ++ (listValue (c' :: cs'')).take (i - c.value.length) := by
-            rw [List.take_append, List.take_of_length_le (by omega)]
-          rw [h_take]
-          have h_c_ne := h_ne' c (.head _)
-          have h_tail_ne : (listValue (c' :: cs'')).take (i - c.value.length) ≠ [] := by
-            intro h_nil
-            have h_len := congrArg List.length h_nil
-            simp only [List.length_take, List.length_nil] at h_len
-            have hc'_ne := h_ne' c' (by simp)
-            have : 1 ≤ (listValue (c' :: cs'')).length := by
-              simp only [listValue_cons, List.length_append]
-              have := List.length_pos_iff_ne_nil.mpr hc'_ne
-              omega
-            omega
-          rw [hmul _ _ h_c_ne h_tail_ne, h_eval' c (.head _), ih_res, he]
-  induction cs generalizing x y with
-  | nil =>
-    rw [locateCut_nil] at hx
-    cases hx
-  | cons c cs' ih =>
-    cases cs' with
-    | nil =>
-      exact False.elim (locateCut_singleton_ne_inl_none c x hx)
-    | cons c' cs'' =>
-      rw [locateCut_cons_cons_inl_none_iff] at hx hy
-      rcases hx with rfl | ⟨hx_gt, hx_tail⟩
-      · rcases hy with rfl | ⟨hy_gt, hy_tail⟩
-        · omega
-        · rw [listValue_cons]
-          have h_drop : (c.value ++ listValue (c' :: cs'')).drop c.value.length =
-              listValue (c' :: cs'') := List.drop_left
-          rw [h_drop]
-          exact h_eval_take (c' :: cs'')
-            (fun z hz ↦ h_eval z (.tail _ hz)) (fun z hz ↦ h_ne z (.tail _ hz)) hy_tail
-      · rcases hy with rfl | ⟨hy_gt, hy_tail⟩
-        · omega
-        · rw [listValue_cons]
-          have h_slice := list_drop_take_append_right c.value (listValue (c' :: cs'')) x y hx_gt.le
-          rw [h_slice]
-          have h_diff : y - x = y - c.value.length - (x - c.value.length) := by omega
-          rw [h_diff]
-          have hxy_sub : x - c.value.length < y - c.value.length := by omega
-          exact ih (fun z hz ↦ h_eval z (.tail _ hz))
-            (fun z hz ↦ h_ne z (.tail _ hz)) hxy_sub hx_tail hy_tail
 
 lemma treeToSplit_leaf_isRamsey {S : Type*} [Semigroup S]
     (eval : List A → S)
