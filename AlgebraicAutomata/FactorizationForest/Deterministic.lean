@@ -346,7 +346,9 @@ lemma length_runAutomaton (q₀ : ValidConfig S) (u : List S) :
 noncomputable def deterministicSplit {h : ℕ} (h₀ : S → Fin h)
     (q₀ : ValidConfig S) (u : List S) : Split (Fin (u.length + 1)) h :=
   fun i ↦
-    let state := (runAutomaton q₀ u).get ⟨i.val, by rw [length_runAutomaton]; exact i.isLt⟩
+    let state := (runAutomaton q₀ u).get ⟨i.val, by
+      rw [length_runAutomaton]
+      exact i.isLt⟩
     h₀ state.last
 
 @[simp]
@@ -359,7 +361,9 @@ lemma runAutomaton_cons (q₀ : ValidConfig S) (a : S) (u : List S) :
   simp [runAutomaton]
 
 lemma runAutomaton_get_zero (q₀ : ValidConfig S) : ∀ (u : List S),
-    (runAutomaton q₀ u).get ⟨0, by rw [length_runAutomaton]; omega⟩ = q₀
+    (runAutomaton q₀ u).get ⟨0, by
+      rw [length_runAutomaton]
+      omega⟩ = q₀
   | [] => rfl
   | _ :: _ => by simp [runAutomaton]
 
@@ -367,7 +371,9 @@ lemma runAutomaton_get_zero (q₀ : ValidConfig S) : ∀ (u : List S),
 lemma deterministicSplit_apply {h : ℕ} (h₀ : S → Fin h)
     (q₀ : ValidConfig S) (u : List S) (i : Fin (u.length + 1)) :
     deterministicSplit h₀ q₀ u i =
-      h₀ ((runAutomaton q₀ u).get ⟨i.val, by rw [length_runAutomaton]; exact i.isLt⟩).last :=
+      h₀ ((runAutomaton q₀ u).get ⟨i.val, by
+        rw [length_runAutomaton]
+        exact i.isLt⟩).last :=
   rfl
 
 end Transducer
@@ -390,11 +396,14 @@ axiom deterministic_transducer_transition_lemma [Finite S] {h : ℕ} (h₀ : S �
     (L : MultiplicativeLabeling S (Fin (u.length + 1)))
     (hL : ∀ (i j : Fin (u.length + 1)) (hij : i < j),
       have hne : (u.drop i.val).take (j.val - i.val) ≠ [] := by
-        simp [List.take_eq_nil_iff]; omega
+        simp [List.take_eq_nil_iff]
+        omega
       L.σ i j = listProdNE ((u.drop i.val).take (j.val - i.val)) hne)
     (x y : Fin (u.length + 1)) (hxy : x < y)
     (h_rel : SplitRelation (deterministicSplit h₀ q₀ u) x y) :
-    let state_x := (runAutomaton q₀ u).get ⟨x.val, by rw [length_runAutomaton]; exact x.isLt⟩
+    let state_x := (runAutomaton q₀ u).get ⟨x.val, by
+      rw [length_runAutomaton]
+      exact x.isLt⟩
     state_x.last * L.σ x y = state_x.last ∧ IsGreenJ state_x.last (L.σ x y)
 
 /-- The deterministic split produced by Colcombet's transducer on any word `u` is a forward
@@ -405,14 +414,19 @@ theorem deterministicSplit_isForwardRamsey [Finite S] {h : ℕ} (h₀ : S → Fi
     (L : MultiplicativeLabeling S (Fin (u.length + 1)))
     (hL : ∀ (i j : Fin (u.length + 1)) (hij : i < j),
       have hne : (u.drop i.val).take (j.val - i.val) ≠ [] := by
-        simp [List.take_eq_nil_iff]; omega
+        simp [List.take_eq_nil_iff]
+        omega
       L.σ i j = listProdNE ((u.drop i.val).take (j.val - i.val)) hne) :
     IsForwardRamsey L (deterministicSplit h₀ q₀ u) := by
   intro x y x' y' hxy hx'y' hrel_xy hrel_x'y' hrel_xx'
   set s := deterministicSplit h₀ q₀ u
   have h_last_xx' :
-      ((runAutomaton q₀ u).get ⟨x.val, by rw [length_runAutomaton]; exact x.isLt⟩).last =
-      ((runAutomaton q₀ u).get ⟨x'.val, by rw [length_runAutomaton]; exact x'.isLt⟩).last := by
+      ((runAutomaton q₀ u).get ⟨x.val, by
+        rw [length_runAutomaton]
+        exact x.isLt⟩).last =
+      ((runAutomaton q₀ u).get ⟨x'.val, by
+        rw [length_runAutomaton]
+        exact x'.isLt⟩).last := by
     have h_rank := hrel_xx'.1
     dsimp [s, deterministicSplit] at h_rank
     exact h_inj h_rank
@@ -431,7 +445,8 @@ theorem colcombet_transducer_theorem [Finite S] {h : ℕ} (h₀ : S → Fin h)
     (L : MultiplicativeLabeling S (Fin (u.length + 1)))
     (hL : ∀ (i j : Fin (u.length + 1)) (hij : i < j),
       have hne : (u.drop i.val).take (j.val - i.val) ≠ [] := by
-        simp [List.take_eq_nil_iff]; omega
+        simp [List.take_eq_nil_iff]
+        omega
       L.σ i j = listProdNE ((u.drop i.val).take (j.val - i.val)) hne) :
     IsForwardRamsey L (deterministicSplit h₀ q₀ u) :=
   deterministicSplit_isForwardRamsey h₀ h_inj h_rev q₀ u L hL
@@ -440,7 +455,9 @@ theorem colcombet_transducer_theorem [Finite S] {h : ℕ} (h₀ : S → Fin h)
 the transducer on the mapped word in `S`. -/
 noncomputable def deterministicSplit_map {A : Type*} {h : ℕ} (h₀ : S → Fin h)
     (q₀ : ValidConfig S) (φ : A → S) (u : List A) : Split (Fin (u.length + 1)) h :=
-  fun i ↦ deterministicSplit h₀ q₀ (u.map φ) ⟨i.val, by rw [List.length_map]; exact i.isLt⟩
+  fun i ↦ deterministicSplit h₀ q₀ (u.map φ) ⟨i.val, by
+    rw [List.length_map]
+    exact i.isLt⟩
 
 /-- Generalization of Colcombet's deterministic transducer theorem to an arbitrary alphabet `A`
 and morphism `φ : A → S` (Colcombet Theorem 5.2):

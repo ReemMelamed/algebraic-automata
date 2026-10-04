@@ -73,23 +73,15 @@ end ClosureSequence
 section TreeLemmas
 
 omit [Semigroup S] in
-mutual
-  /-- The yield of a Ramsey factorization tree is always non-empty. -/
-  lemma tree_value_ne_nil (t : FactorizationTree S) (eval : List S → T)
-      (ht : t.IsRamsey eval) : t.value ≠ [] := by
-    cases t with
-    | leaf a => simp [FactorizationTree.value]
-    | binary l r => exact fun h ↦ tree_value_ne_nil l eval ht.1 (List.append_eq_nil_iff.mp h).1
-    | idempotent cs => exact listTree_value_ne_nil cs eval ht.2.1 (fun h ↦ by cases h ▸ ht.1)
-
-  /-- The yield of a list of Ramsey factorization trees is non-empty if the list is non-empty. -/
-  lemma listTree_value_ne_nil (cs : List (FactorizationTree S)) (eval : List S → T)
-      (hcs : FactorizationTree.listIsRamsey eval cs) (hne : cs ≠ []) :
-      FactorizationTree.listValue cs ≠ [] := by
-    rcases cs with _ | ⟨c, _⟩
-    · contradiction
-    · exact fun h ↦ tree_value_ne_nil c eval hcs.1 (List.append_eq_nil_iff.mp h).1
-end
+/-- The yield of a list of Ramsey factorization trees is non-empty if the list is non-empty. -/
+lemma listTree_value_ne_nil (cs : List (FactorizationTree S)) (eval : List S → T)
+    (hcs : FactorizationTree.listIsRamsey eval cs) (hne : cs ≠ []) :
+    FactorizationTree.listValue cs ≠ [] := by
+  rcases cs with _ | ⟨c, rest⟩
+  · contradiction
+  · rw [FactorizationTree.listValue_cons]
+    have hc_ne : c.value ≠ [] := FactorizationTree.tree_value_ne_nil c hcs.1
+    simp [hc_ne]
 
 mutual
   /-- Product of the yield of a Ramsey tree is contained in `X_seq` at its height. -/
@@ -101,36 +93,66 @@ mutual
       (ht_ne : t.value ≠ []) :
       listProdNE t.value ht_ne ∈ X_seq ϕ X t.height := by
     cases t with
-    | leaf a => exact hX a (by simp [FactorizationTree.value])
-    | binary l r =>
-      have hl_ne := tree_value_ne_nil l eval ht.1
-      have hr_ne := tree_value_ne_nil r eval ht.2
-      have ih_l := X_seq_mono ϕ X (le_max_left l.height r.height)
-        (tree_prod_in_X_seq ϕ X eval h_eval l ht.1
-          (fun x hx ↦ hX x (by simp [FactorizationTree.value, hx])) hl_ne)
-      have ih_r := X_seq_mono ϕ X (le_max_right l.height r.height)
-        (tree_prod_in_X_seq ϕ X eval h_eval r ht.2
-          (fun x hx ↦ hX x (by simp [FactorizationTree.value, hx])) hr_ne)
-      have h_prod : listProdNE (l.binary r).value ht_ne =
-          listProdNE l.value hl_ne * listProdNE r.value hr_ne := by
-        rw [listProdNE_eq (l.binary r).value (l.value ++ r.value) ht_ne
-          (by simp [hl_ne, hr_ne]) rfl]
-        exact listProdNE_concat l.value r.value hl_ne hr_ne
+    | leaf a =>
+      have h1 : (FactorizationTree.leaf a).value = [a] := FactorizationTree.value_leaf a
+      have h2 : (FactorizationTree.leaf a).height = 0 := FactorizationTree.height_leaf a
+      rw [h2]
+      have ha_mem : a ∈ (FactorizationTree.leaf a).value := by
+        rw [h1]
+        exact List.mem_singleton_self a
+      have ha_X : a ∈ X := hX a ha_mem
+      have h_prod : listProdNE (FactorizationTree.leaf a).value ht_ne = a := by
+        rw [listProdNE_eq (FactorizationTree.leaf a).value [a] ht_ne (by simp) h1]
+        rfl
       rw [h_prod]
-      dsimp [FactorizationTree.height]
+      exact ha_X
+    | binary l r =>
+      rw [FactorizationTree.isRamsey_binary] at ht
+      obtain ⟨ht_l, ht_r⟩ := ht
+      have hl_ne := FactorizationTree.tree_value_ne_nil l ht_l
+      have hr_ne := FactorizationTree.tree_value_ne_nil r ht_r
+      have hX_l : ∀ x ∈ l.value, x ∈ X := fun x hx ↦ by
+        apply hX
+        rw [FactorizationTree.value_binary]
+        exact List.mem_append_left _ hx
+      have hX_r : ∀ x ∈ r.value, x ∈ X := fun x hx ↦ by
+        apply hX
+        rw [FactorizationTree.value_binary]
+        exact List.mem_append_right _ hx
+      have ih_l := X_seq_mono ϕ X (le_max_left l.height r.height)
+        (tree_prod_in_X_seq ϕ X eval h_eval l ht_l hX_l hl_ne)
+      have ih_r := X_seq_mono ϕ X (le_max_right l.height r.height)
+        (tree_prod_in_X_seq ϕ X eval h_eval r ht_r hX_r hr_ne)
+      have h_prod : listProdNE (FactorizationTree.binary l r).value ht_ne =
+          listProdNE l.value hl_ne * listProdNE r.value hr_ne := by
+        rw [listProdNE_eq (FactorizationTree.binary l r).value (l.value ++ r.value) ht_ne
+          (by simp [hl_ne, hr_ne]) (FactorizationTree.value_binary l r)]
+        exact listProdNE_concat l.value r.value hl_ne hr_ne
+      rw [h_prod, FactorizationTree.height_binary]
       rw [add_comm 1]
       dsimp [X_seq]
       exact Or.inl (Or.inr ⟨_, ih_l, _, ih_r, rfl⟩)
     | idempotent cs =>
+      rw [FactorizationTree.isRamsey_idempotent] at ht
       obtain ⟨hlen, hcs_ramsey, e, he_idem, he_eval⟩ := ht
       have hcs_ne : cs ≠ [] := by
         rintro rfl
-        dsimp at hlen
+        change 2 ≤ 0 at hlen
         omega
-      have ih := listTree_prod_in_closure ϕ X eval h_eval cs hcs_ramsey hcs_ne e he_eval hX
-      dsimp [FactorizationTree.height]
+      have hX_cs : ∀ x ∈ FactorizationTree.listValue cs, x ∈ X := fun x hx ↦ by
+        apply hX
+        rw [FactorizationTree.value_idempotent]
+        exact hx
+      have ih := listTree_prod_in_closure ϕ X eval h_eval cs hcs_ramsey hcs_ne e he_eval hX_cs
+      have h_prod : listProdNE (FactorizationTree.idempotent cs).value ht_ne =
+          listProdNE (FactorizationTree.listValue cs)
+            (listTree_value_ne_nil cs eval hcs_ramsey hcs_ne) :=
+        listProdNE_eq _ _ ht_ne (listTree_value_ne_nil cs eval hcs_ramsey hcs_ne)
+          (FactorizationTree.value_idempotent cs)
+      rw [FactorizationTree.height_idempotent]
       rw [add_comm 1]
       dsimp [X_seq]
+      rw [h_prod]
       exact Or.inr (Set.mem_iUnion.mpr ⟨e, Set.mem_iUnion.mpr ⟨he_idem, ih⟩⟩)
 
   /-- Auxiliary induction for the children of an idempotent node. -/
@@ -147,10 +169,13 @@ mutual
     cases cs with
     | nil => contradiction
     | cons c rest =>
-      have hc_ne := tree_value_ne_nil c eval hcs.1
+      have hc_ne := FactorizationTree.tree_value_ne_nil c hcs.1
+      have hX_c : ∀ x ∈ c.value, x ∈ X := fun x hx ↦ by
+        apply hX
+        rw [FactorizationTree.listValue_cons]
+        exact List.mem_append_left _ hx
       have ih_c := X_seq_mono ϕ X (le_max_left c.height (FactorizationTree.listHeight rest))
-        (tree_prod_in_X_seq ϕ X eval h_eval c hcs.1
-          (fun x hx ↦ hX x (by simp [FactorizationTree.listValue, hx])) hc_ne)
+        (tree_prod_in_X_seq ϕ X eval h_eval c hcs.1 hX_c hc_ne)
       have hc_phi : ϕ (listProdNE c.value hc_ne) = e := by
         have h_eval_c := h_eval c.value hc_ne
         rw [he_eval c (by simp)] at h_eval_c
@@ -164,9 +189,12 @@ mutual
         rw [listProdNE_eq _ _ _ hc_ne (by simp [FactorizationTree.listValue])]
         exact hc_in
       · have hrest_val_ne := listTree_value_ne_nil rest eval hcs.2 hrest
+        have hX_rest : ∀ x ∈ FactorizationTree.listValue rest, x ∈ X := fun x hx ↦ by
+          apply hX
+          rw [FactorizationTree.listValue_cons]
+          exact List.mem_append_right _ hx
         have ih_rest := listTree_prod_in_closure ϕ X eval h_eval rest hcs.2 hrest e
-          (fun t ht ↦ he_eval t (by simp [ht]))
-          (fun x hx ↦ hX x (by simp [FactorizationTree.listValue, hx]))
+          (fun t ht ↦ he_eval t (by simp [ht])) hX_rest
         have h_sub :
             (Subsemigroup.closure (X_seq ϕ X (FactorizationTree.listHeight rest) ∩ ϕ ⁻¹' {e}) :
               Set S) ⊆
@@ -182,7 +210,7 @@ mutual
               listProdNE (FactorizationTree.listValue rest) hrest_val_ne := by
           rw [listProdNE_eq (FactorizationTree.listValue (c :: rest))
             (c.value ++ FactorizationTree.listValue rest) _
-            (by simp [hc_ne, hrest_val_ne]) rfl]
+            (by simp [hc_ne, hrest_val_ne]) (FactorizationTree.listValue_cons c rest)]
           exact listProdNE_concat c.value (FactorizationTree.listValue rest) hc_ne hrest_val_ne
         rw [h_prod]
         exact Subsemigroup.mul_mem _ hc_in (h_sub ih_rest)
@@ -310,11 +338,17 @@ lemma finset_bUnion_mem_P_or_empty (P : Set (Set S)) (h2 : Cond2 P)
     rw [Finset.set_biUnion_insert]
     rcases hf a (Finset.mem_insert_self a s') with hfa | hfa
     · rcases ih (fun b hb ↦ hf b (Finset.mem_insert_of_mem hb)) with hU | hU
-      · left; rw [hfa, hU, union_empty]
-      · right; rw [hfa, empty_union]; exact hU
+      · left
+        rw [hfa, hU, union_empty]
+      · right
+        rw [hfa, empty_union]
+        exact hU
     · rcases ih (fun b hb ↦ hf b (Finset.mem_insert_of_mem hb)) with hU | hU
-      · right; rw [hU, union_empty]; exact hfa
-      · right; exact h2 hfa hU
+      · right
+        rw [hU, union_empty]
+        exact hfa
+      · right
+        exact h2 hfa hU
 
 /-- Restriction family `P'` of sets in `P` whose fiber slices are in `P ∪ {∅}`. -/
 def restrictionFamily (ϕ : S →ₙ* T) (P : Set (Set S)) : Set (Set S) :=
@@ -350,9 +384,11 @@ lemma mul_mem_restrictionFamily [Finite T] (ϕ : S →ₙ* T) (P : Set (Set S))
     {A B : Set S} (hA : A ∈ restrictionFamily ϕ P) (hB : B ∈ restrictionFamily ϕ P) :
     A * B ∈ restrictionFamily ϕ P := by
   rcases hA with rfl | ⟨hAP, hAc⟩
-  · left; rw [empty_mul]
+  · left
+    rw [empty_mul]
   rcases hB with rfl | ⟨hBP, hBc⟩
-  · left; rw [mul_empty]
+  · left
+    rw [mul_empty]
   right
   have instFintypeT : Fintype T := Fintype.ofFinite T
   constructor
@@ -368,10 +404,13 @@ lemma mul_mem_restrictionFamily [Finite T] (ϕ : S →ₙ* T) (P : Set (Set S))
     apply finset_bUnion_mem_P_or_empty P h2
     intro p _
     rcases hAc p.1 with hA_emp | hA_P
-    · left; rw [hA_emp, empty_mul]
+    · left
+      rw [hA_emp, empty_mul]
     rcases hBc p.2 with hB_emp | hB_P
-    · left; rw [hB_emp, mul_empty]
-    · right; exact h3 hA_P hB_P
+    · left
+      rw [hB_emp, mul_empty]
+    · right
+      exact h3 hA_P hB_P
 
 open Classical in
 lemma idempotent_closure_mem_restrictionFamily (ϕ : S →ₙ* T) (P : Set (Set S))
@@ -379,9 +418,11 @@ lemma idempotent_closure_mem_restrictionFamily (ϕ : S →ₙ* T) (P : Set (Set 
     (e : T) (he : e * e = e) :
     (Subsemigroup.closure (A ∩ ϕ ⁻¹' {e}) : Set S) ∈ restrictionFamily ϕ P := by
   rcases hA with rfl | ⟨hAP, hAc⟩
-  · left; simp [Subsemigroup.closure_empty]
+  · left
+    simp [Subsemigroup.closure_empty]
   rcases hAc e with he_emp | he_P
-  · left; simp [he_emp, Subsemigroup.closure_empty]
+  · left
+    simp [he_emp, Subsemigroup.closure_empty]
   right
   have h_sub : A ∩ ϕ ⁻¹' {e} ⊆ ϕ ⁻¹' {e} := inter_subset_right
   have h_cl_P := h4 he_P ⟨e, he, h_sub⟩
@@ -396,7 +437,9 @@ lemma X_mem_restrictionFamily [Finite T] (ϕ : S →ₙ* T) (X : Set S) (P : Set
     (h1 : Cond1 ϕ X P) (h2 : Cond2 P) :
     X ∈ restrictionFamily ϕ P := by
   have instFintypeT : Fintype T := Fintype.ofFinite T
-  have h_eq : X = ⋃ a ∈ (Finset.univ : Finset T), {x ∈ X | ϕ x = a} := by ext; simp
+  have h_eq : X = ⋃ a ∈ (Finset.univ : Finset T), {x ∈ X | ϕ x = a} := by
+    ext
+    simp
   rw [h_eq]
   apply finset_bUnion_mem_restrictionFamily ϕ P h2
   intro a _
@@ -411,7 +454,8 @@ lemma X_mem_restrictionFamily [Finite T] (ϕ : S →ₙ* T) (X : Set S) (P : Set
       · subst hc
         ext x
         simp (config := {contextual := true})
-      · ext x; simp only [mem_inter_iff, mem_ofPred_eq, mem_preimage, mem_singleton_iff,
+      · ext x
+        simp only [mem_inter_iff, mem_ofPred_eq, mem_preimage, mem_singleton_iff,
           mem_empty_iff_false, iff_false, not_and]
         rintro ⟨-, hxa⟩ hxc
         exact hc (hxc.symm.trans hxa)
@@ -440,7 +484,9 @@ theorem closure_mem_set_family [Finite T] [Nonempty T] (ϕ : S →ₙ* T) (X : S
       · have h_reindex : (⋃ (e : T) (he : e * e = e),
             (Subsemigroup.closure (X_seq ϕ X n ∩ ϕ ⁻¹' {e}) : Set S)) =
             ⋃ e ∈ (Finset.univ.filter (fun (e : T) ↦ e * e = e)),
-              (Subsemigroup.closure (X_seq ϕ X n ∩ ϕ ⁻¹' {e}) : Set S) := by ext; simp
+              (Subsemigroup.closure (X_seq ϕ X n ∩ ϕ ⁻¹' {e}) : Set S) := by
+          ext
+          simp
         rw [h_reindex]
         apply finset_bUnion_mem_restrictionFamily ϕ P h2
         intro e he

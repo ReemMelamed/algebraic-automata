@@ -112,7 +112,11 @@ lemma evalMax_append (n : ℕ) (hn : 0 < n) (u v : List (MaxSemigroup n)) :
 /-- Any element in a list is bounded by the maximum evaluation of the list. -/
 lemma evalMax_ge_of_mem (n : ℕ) (hn : 0 < n) {x : MaxSemigroup n} {u : List (MaxSemigroup n)}
     (hx : x ∈ u) : x ≤ evalMax n hn u := by
-  induction u with | nil => contradiction | cons y ys ih => rw [evalMax_cons]; grind
+  induction u with
+  | nil => contradiction
+  | cons y ys ih =>
+    rw [evalMax_cons]
+    grind
 
 /-- If a non-bottom element `k` is bounded by the evaluation of a list,
 some element in the list is at least `k`. -/
@@ -125,6 +129,11 @@ lemma exists_mem_ge_of_evalMax_ge (n : ℕ) (hn : 0 < n) {k : MaxSemigroup n}
     rw [evalMax_cons] at h
     rcases le_max_iff.mp h with h1 | h2 <;>
       [exact ⟨y, .head ys, h1⟩; exact (ih h2).imp fun x ⟨hx, hx2⟩ ↦ ⟨.tail y hx, hx2⟩]
+
+lemma isRamsey_of_mem_listIsRamsey {A S : Type*} [Semigroup S] {eval : List A → S}
+    {cs : List (FactorizationTree A)} (hcs : listIsRamsey eval cs) {c : FactorizationTree A}
+    (hc : c ∈ cs) : c.IsRamsey eval :=
+  (listIsRamsey_iff eval cs).mp hcs c hc
 
 /-- In an idempotent node of a Ramsey tree, if one child contains an element `≥ k`,
 then every child contains an element `≥ k`. -/
@@ -255,12 +264,12 @@ lemma infix_listValue_two {α : Type*} (cs : List (FactorizationTree α))
     (∃ c₁ ∈ cs, ∃ c₂ ∈ cs, u <:+: value c₁ ++ value c₂) := by
   induction cs with
   | nil =>
-    have := h_inf.length_le
-    dsimp [listValue] at this
+    have h_len := h_inf.length_le
+    simp only [listValue, List.map_nil, List.flatten_nil, List.length_nil] at h_len
     cases u with
     | nil => contradiction
     | cons head tail =>
-      dsimp [List.length] at this
+      simp only [List.length_cons] at h_len
       omega
   | cons c cs' ih =>
     obtain ⟨s, t, hst⟩ := h_inf
@@ -321,9 +330,9 @@ lemma infix_listValue_two {α : Type*} (cs : List (FactorizationTree α))
           exact List.append_cancel_left h_drop_cs'
         cases cs' with
         | nil =>
-          dsimp [listValue] at h_drop_cs''
           have h_len := congrArg List.length h_drop_cs''
-          simp only [List.length_nil, List.length_append, List.length_drop] at h_len
+          simp only [listValue, List.map_nil, List.flatten_nil, List.length_nil,
+            List.length_append, List.length_drop] at h_len
           omega
         | cons c' cs'' =>
           dsimp [listValue] at h_drop_cs''
@@ -353,7 +362,7 @@ lemma infix_listValue_two {α : Type*} (cs : List (FactorizationTree α))
 /-- A tree that is not a leaf has height at least 1. -/
 lemma height_pos_of_not_leaf {α : Type*} (t : FactorizationTree α)
     (h : ∀ a, t ≠ FactorizationTree.leaf a) : 1 ≤ t.height := by
-  cases t <;> first | exact (h _ rfl).elim | exact Nat.le_add_right 1 _
+  cases t <;> first | exact (h _ rfl).elim | simp [height_binary, height_idempotent]
 
 /-- The height of any tree in a list is bounded by `listHeight`. -/
 lemma mem_listHeight_le {α : Type*} {c : FactorizationTree α} {cs : List (FactorizationTree α)}
@@ -369,17 +378,21 @@ lemma mem_listHeight_le {α : Type*} {c : FactorizationTree α} {cs : List (Fact
 lemma height_ge_child_of_idempotent {α : Type*} {cs : List (FactorizationTree α)}
     {c : FactorizationTree α} (hc : c ∈ cs) :
     c.height + 1 ≤ (FactorizationTree.idempotent cs).height := by
-  have := mem_listHeight_le hc; dsimp [FactorizationTree.height]; omega
+  have := mem_listHeight_le hc
+  rw [height_idempotent]
+  omega
 
 /-- The height of a binary tree is strictly greater than the height of its left subtree. -/
 lemma height_ge_child_of_binary_left {α : Type*} (l r : FactorizationTree α) :
     l.height + 1 ≤ (FactorizationTree.binary l r).height := by
-  dsimp [FactorizationTree.height]; omega
+  rw [height_binary]
+  omega
 
 /-- The height of a binary tree is strictly greater than the height of its right subtree. -/
 lemma height_ge_child_of_binary_right {α : Type*} (l r : FactorizationTree α) :
     r.height + 1 ≤ (FactorizationTree.binary l r).height := by
-  dsimp [FactorizationTree.height]; omega
+  rw [height_binary]
+  omega
 
 /-- Inductive sequence of hard words $w_k$: constructed inductively by
 taking 27 copies of the previous word and appending the next letter $k+1$. -/
@@ -394,7 +407,9 @@ def w (n : ℕ) (hn : 0 < n) : ℕ → List (MaxSemigroup n)
 /-- The word $w_k$ is non-empty for all $k$. -/
 lemma w_ne_nil (n : ℕ) (hn : 0 < n) : ∀ k : ℕ, w n hn k ≠ []
   | 0 => repeatTwentySeven_ne_nil (by simp)
-  | k + 1 => by dsimp [w]; split_ifs <;> exact repeatTwentySeven_ne_nil (by simp [w_ne_nil n hn k])
+  | k + 1 => by
+    dsimp [w]
+    split_ifs <;> exact repeatTwentySeven_ne_nil (by simp [w_ne_nil n hn k])
 
 /-- Every element in $w_k$ is at most $k$. -/
 lemma w_mem_le (n : ℕ) (hn : 0 < n) (k : ℕ) (hk : k < n)
@@ -404,7 +419,8 @@ lemma w_mem_le (n : ℕ) (hn : 0 < n) (k : ℕ) (hk : k < n)
     have := mem_repeatTwentySeven hx
     cases this with | head => rfl | tail _ h => contradiction
   | succ k' ih =>
-    dsimp [w] at hx; rw [dite_eq_left hk] at hx
+    dsimp [w] at hx
+    rw [dite_eq_left hk] at hx
     rcases List.mem_append.mp (mem_repeatTwentySeven hx) with h | h
     · exact (ih (by omega) x (mem_repeatTwentySeven h)).trans (Nat.le_succ _)
     · cases h with | head => rfl | tail _ h => contradiction
@@ -418,12 +434,16 @@ lemma w_mem_lt (n : ℕ) (hn : 0 < n) (k : ℕ) (hk : k + 1 < n)
 
 /-- The 9-fold repetition of a non-empty list has length at least 9. -/
 lemma repeatNine_length_ge {α : Type*} (l : List α) (hl : l ≠ []) : 9 ≤ (repeatNine l).length := by
-  have := List.length_pos_iff.mpr hl; simp [repeatNine, repeatThree]; omega
+  have := List.length_pos_iff.mpr hl
+  simp [repeatNine, repeatThree]
+  omega
 
 /-- The 27-fold repetition of a non-empty list has length at least 27. -/
 lemma repeatTwentySeven_length_ge {α : Type*} (l : List α) (hl : l ≠ []) :
     27 ≤ (repeatTwentySeven l).length := by
-  have := List.length_pos_iff.mpr hl; simp [repeatTwentySeven, repeatNine, repeatThree]; omega
+  have := List.length_pos_iff.mpr hl
+  simp [repeatTwentySeven, repeatNine, repeatThree]
+  omega
 
 /-- If a 9-fold repetition of $w_k$ occurs in a tree that also contains a large element,
 a child tree contains $w_k$. -/
@@ -439,15 +459,22 @@ lemma exists_child_w_of_repeatNine_w {n : ℕ} (hn : 0 < n) (k : ℕ) (hk : k + 
   cases C with
   | leaf a =>
     have h_val_len := h_inf.length_le
-    dsimp [FactorizationTree.value] at h_val_len
+    rw [value_leaf] at h_val_len
+    have := repeatNine_length_ge (w n hn k) hw_ne
+    simp only [List.length_singleton] at h_val_len
     omega
   | binary l r =>
+    rw [isRamsey_binary] at hC_ramsey
+    obtain ⟨hC_l, hC_r⟩ := hC_ramsey
+    rw [value_binary] at h_inf
     rcases repeatNine_isInfix_append (w n hn k) hw_ne l.value r.value h_inf with h | h
-    · exact ⟨l, hC_ramsey.1, height_ge_child_of_binary_left l r,
+    · exact ⟨l, hC_l, height_ge_child_of_binary_left l r,
         (infix_repeatThree_of_self _).trans h⟩
-    · exact ⟨r, hC_ramsey.2, height_ge_child_of_binary_right l r,
+    · exact ⟨r, hC_r, height_ge_child_of_binary_right l r,
         (infix_repeatThree_of_self _).trans h⟩
   | idempotent gs =>
+    rw [value_idempotent] at h_inf h_ge
+    rw [isRamsey_idempotent] at hC_ramsey
     obtain ⟨hlen, hgs_ramsey, e, he_idem, he_eval⟩ := hC_ramsey
     obtain ⟨y, hy_val, hky⟩ := h_ge
     obtain ⟨t₀, ht₀_mem, hyt₀⟩ := mem_listValue hy_val
@@ -505,17 +532,24 @@ lemma grandchild_has_w_of_w_succ {n : ℕ} (hn : 0 < n) (k : ℕ) (hk : k + 1 < 
   cases t with
   | leaf a =>
     have h_val_len := h_inf.length_le
-    dsimp [FactorizationTree.value] at h_val_len
+    rw [value_leaf] at h_val_len
+    have := repeatTwentySeven_length_ge X hX_ne
+    simp only [List.length_singleton] at h_val_len
     omega
   | binary l r =>
+    rw [isRamsey_binary] at ht_ramsey
+    obtain ⟨ht_l, ht_r⟩ := ht_ramsey
+    rw [value_binary] at h_inf
     rcases repeatTwentySeven_isInfix_append X hX_ne l.value r.value h_inf with h | h
-    · obtain ⟨g, hg_ram, hg_ht, hg_inf⟩ := exists_child_w_of_repeatNine_X hn k hk l ht_ramsey.1 h
+    · obtain ⟨g, hg_ram, hg_ht, hg_inf⟩ := exists_child_w_of_repeatNine_X hn k hk l ht_l h
       have := height_ge_child_of_binary_left l r
       exact ⟨g, hg_ram, by omega, hg_inf⟩
-    · obtain ⟨g, hg_ram, hg_ht, hg_inf⟩ := exists_child_w_of_repeatNine_X hn k hk r ht_ramsey.2 h
+    · obtain ⟨g, hg_ram, hg_ht, hg_inf⟩ := exists_child_w_of_repeatNine_X hn k hk r ht_r h
       have := height_ge_child_of_binary_right l r
       exact ⟨g, hg_ram, by omega, hg_inf⟩
   | idempotent cs =>
+    rw [value_idempotent] at h_inf
+    rw [isRamsey_idempotent] at ht_ramsey
     obtain ⟨hlen, hcs_ramsey, e, he_idem, he_eval⟩ := ht_ramsey
     have ha_in_list : ⟨k + 1, hk⟩ ∈ listValue cs :=
       h_inf.subset ((infix_repeatTwentySeven_of_self X).subset
@@ -562,7 +596,9 @@ lemma height_ge_of_w_infix {n : ℕ} (hn : 0 < n) (k : ℕ) (hk : k < n)
       rintro a rfl
       have h_w_le := h.length_le
       have h_rep_ge := repeatTwentySeven_length_ge [botEl n hn] (by simp)
-      dsimp [w, FactorizationTree.value] at *
+      dsimp [w] at h_w_le h_rep_ge
+      rw [value_leaf] at h_w_le
+      simp only [List.length_singleton] at h_w_le
       omega
     have h_ht_pos := height_pos_of_not_leaf t h_not_leaf
     omega

@@ -870,9 +870,7 @@ lemma locateCut_cons_right (c : FactorizationTree A) (cs : List (FactorizationTr
       | .inr () => .inr ()
       | .inl none => .inl none
       | .inl (some (⟨c', hc'⟩, idx)) => .inl (some (⟨c', by simp [hc']⟩, idx)) := by
-  cases cs
-  · grind only [locateCut]
-  · grind only [locateCut]
+  cases cs <;> grind only [locateCut]
 
 lemma locateCut_at_length (cs : List (FactorizationTree A))
     (h_ne : ∀ c ∈ cs, c.value ≠ []) :
@@ -1219,9 +1217,7 @@ lemma idempotent_of_lt {S : Type*} [Semigroup S]
       · intro x y z hxy hyz hx_lt hrel_xy hrel_yz
         rcases splitRelation_idempotent_cases hcs_emp hxy hrel_xy with hy_lt | hx_ge
         · have hz_lt : z.val < c.value.length := by
-            rcases splitRelation_idempotent_cases hcs_emp hyz hrel_yz with h | h
-            · omega
-            · omega
+            rcases splitRelation_idempotent_cases hcs_emp hyz hrel_yz with h | h <;> omega
           rw [wordLabeling_idempotent_left eval hmul c cs x y hxy.le hy_lt.le]
           exact ih_c.1 _ _ _ hxy hyz
             (splitRelation_idempotent_left hxy hy_lt hrel_xy)
@@ -1240,14 +1236,10 @@ lemma idempotent_of_lt {S : Type*} [Semigroup S]
         rcases splitRelation_idempotent_cases hcs_emp hxy hrel_xy with hy_lt | hx_ge
         · have hu_lt : u.val < c.value.length := by
             by_cases h : x < u
-            · rcases splitRelation_idempotent_cases hcs_emp h hrel_xu with h' | h'
-              · omega
-              · omega
+            · rcases splitRelation_idempotent_cases hcs_emp h hrel_xu with h' | h' <;> omega
             · omega
           have hv_lt : v.val < c.value.length := by
-            rcases splitRelation_idempotent_cases hcs_emp huv hrel_uv with h | h
-            · omega
-            · omega
+            rcases splitRelation_idempotent_cases hcs_emp huv hrel_uv with h | h <;> omega
           have hrel_xu_c : SplitRelation (treeToSplit c) ⟨x.val, by omega⟩ ⟨u.val, by omega⟩ := by
             rcases lt_trichotomy x u with h | rfl | h
             · exact splitRelation_idempotent_left h hu_lt hrel_xu

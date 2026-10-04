@@ -499,7 +499,9 @@ lemma ramsey_split_regular_case {S : Type*} [Semigroup S] [Fintype S]
           ⟨Finset.mem_univ _, fun w _ ↦ Fin.le_iff_val_le_val.mpr (Nat.le_pred_of_lt w.isLt)⟩
       rw [h_min_eq, hsX_norm, hm])
     (h_max_val := hm_max) (h_N_pos := h_pos)
-    (h_N_le_M := by unfold nSElement; simp)⟩
+    (h_N_le_M := by
+      unfold nSElement
+      simp)⟩
 
 end SplitConstruction
 
