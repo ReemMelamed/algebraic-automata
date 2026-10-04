@@ -796,113 +796,24 @@ lemma splitRelation_binary_left {l r : FactorizationTree A}
       ⟨y.val, by
         have := y.isLt
         omega⟩ := by
-  have hx : x.val < l.value.length := by omega
-  constructor
-  · have h1 := congrArg Fin.val hrel.1
-    rw [treeToSplit_val, treeToSplit_val] at h1
-    rw [lcaHeightRaw_binary_left l r hx, lcaHeightRaw_binary_left l r hy] at h1
-    exact Fin.ext (by rw [treeToSplit_val, treeToSplit_val, h1])
-  · intro z hz1 hz2
-    have hz1_val := Fin.le_iff_val_le_val.mp hz1
-    have hz2_val := Fin.le_iff_val_le_val.mp hz2
-    have hz_lt : z.val < l.value.length := by
-      change min x.val y.val ≤ z.val at hz1_val
-      change z.val ≤ max x.val y.val at hz2_val
-      omega
-    let z_bin : Fin ((binary l r).value.length + 1) := ⟨z.val, by
-      simp [value_binary]
-      omega⟩
-    have hz1_bin : min x y ≤ z_bin := by
-      rw [Fin.le_iff_val_le_val]
-      change min x.val y.val ≤ z.val
-      exact hz1_val
-    have hz2_bin : z_bin ≤ max x y := by
-      rw [Fin.le_iff_val_le_val]
-      change z.val ≤ max x.val y.val
-      exact hz2_val
-    have h_bet := hrel.2 z_bin hz1_bin hz2_bin
-    have h_bet_val := Fin.le_iff_val_le_val.mp h_bet
-    rw [treeToSplit_val, treeToSplit_val] at h_bet_val
-    rw [lcaHeightRaw_binary_left l r hz_lt] at h_bet_val
-    have h_min_lt : (min x y).val < l.value.length := by
-      change min x.val y.val < l.value.length
-      omega
-    rw [lcaHeightRaw_binary_left l r h_min_lt] at h_bet_val
-    rw [Fin.le_iff_val_le_val, treeToSplit_val, treeToSplit_val]
-    have : (min (⟨x.val, by
-                have := y.isLt
-                omega⟩ : Fin (l.value.length + 1))
-                (⟨y.val, by
-                have := y.isLt
-                omega⟩ : Fin (l.value.length + 1))).val =
-           (min x y).val := by
-      change min x.val y.val = min x.val y.val
-      rfl
-    exact this ▸ h_bet_val
+  apply splitRelation_of_le_between (treeToSplit l)
+  · exact hxy
+  · grind [hrel.1, treeToSplit_val, lcaHeightRaw_binary_left]
+  · intro z _ _
+    grind [hrel.2 ⟨z.val, by grind⟩, treeToSplit_val, lcaHeightRaw_binary_left]
 
 lemma splitRelation_binary_right {l r : FactorizationTree A}
     {x y : Fin ((binary l r).value.length + 1)} (hxy : x < y)
     (hx : l.value.length < x.val)
     (hrel : SplitRelation (treeToSplit (.binary l r)) x y) :
     SplitRelation (treeToSplit r)
-      ⟨x.val - l.value.length, by
-        have := x.isLt
-        simp [value_binary] at this
-        omega⟩
-      ⟨y.val - l.value.length, by
-        have := y.isLt
-        simp [value_binary] at this
-        omega⟩ := by
-  have hy : l.value.length < y.val := by omega
-  constructor
-  · have h1 := congrArg Fin.val hrel.1
-    rw [treeToSplit_val, treeToSplit_val] at h1
-    rw [lcaHeightRaw_binary_right l r hx, lcaHeightRaw_binary_right l r hy] at h1
-    exact Fin.ext (by rw [treeToSplit_val, treeToSplit_val, h1])
-  · intro z hz1 hz2
-    have hz1_val := Fin.le_iff_val_le_val.mp hz1
-    have hz2_val := Fin.le_iff_val_le_val.mp hz2
-    have hz_ge : l.value.length < z.val + l.value.length := by
-      change min (x.val - l.value.length) (y.val - l.value.length) ≤ z.val at hz1_val
-      omega
-    let z_bin : Fin ((binary l r).value.length + 1) := ⟨z.val + l.value.length, by
-      have := z.isLt
-      simp [value_binary]
-      omega⟩
-    have hz1_bin : min x y ≤ z_bin := by
-      rw [Fin.le_iff_val_le_val]
-      change min x.val y.val ≤ z.val + l.value.length
-      change min (x.val - l.value.length) (y.val - l.value.length) ≤ z.val at hz1_val
-      omega
-    have hz2_bin : z_bin ≤ max x y := by
-      rw [Fin.le_iff_val_le_val]
-      change z.val + l.value.length ≤ max x.val y.val
-      change z.val ≤ max (x.val - l.value.length) (y.val - l.value.length) at hz2_val
-      omega
-    have h_bet := hrel.2 z_bin hz1_bin hz2_bin
-    have h_bet_val := Fin.le_iff_val_le_val.mp h_bet
-    rw [treeToSplit_val, treeToSplit_val] at h_bet_val
-    rw [lcaHeightRaw_binary_right l r hz_ge] at h_bet_val
-    have h_min_ge : l.value.length < (min x y).val := by
-      change l.value.length < min x.val y.val
-      omega
-    rw [lcaHeightRaw_binary_right l r h_min_ge] at h_bet_val
-    rw [Fin.le_iff_val_le_val, treeToSplit_val, treeToSplit_val]
-    have : z.val + l.value.length - l.value.length = z.val := by omega
-    rw [this] at h_bet_val
-    have h_min_eq : (min (⟨x.val - l.value.length, by
-        have := x.isLt
-        simp [value_binary] at this
-        omega⟩ : Fin (r.value.length + 1))
-      (⟨y.val - l.value.length, by
-        have := y.isLt
-        simp [value_binary] at this
-        omega⟩ : Fin (r.value.length + 1))).val =
-      (min x y).val - l.value.length := by
-      change min (x.val - l.value.length)
-        (y.val - l.value.length) = min x.val y.val - l.value.length
-      omega
-    exact h_min_eq ▸ h_bet_val
+      ⟨x.val - l.value.length, by grind [value_binary]⟩
+      ⟨y.val - l.value.length, by grind [value_binary]⟩ := by
+  apply splitRelation_of_le_between (treeToSplit r)
+  · grind
+  · grind [hrel.1, treeToSplit_val, lcaHeightRaw_binary_right]
+  · intro z _ _
+    grind [hrel.2 ⟨z.val + l.value.length, by grind⟩, treeToSplit_val, lcaHeightRaw_binary_right]
 
 lemma wordLabeling_binary_left {S : Type*} [Semigroup S]
     (eval : List A → S)
@@ -927,15 +838,10 @@ lemma wordLabeling_binary_right {S : Type*} [Semigroup S]
     (wordLabeling eval hmul (binary l r).value).σ x y =
     (wordLabeling eval hmul r.value).σ
       ⟨x.val - l.value.length, by
-        have := x.isLt
-        simp [value_binary] at this
-        omega⟩
+        grind [value_binary]⟩
       ⟨y.val - l.value.length, by
-        have := y.isLt
-        simp [value_binary] at this
-        omega⟩ := by
-  simp only [show y.val - l.value.length - (x.val - l.value.length) = y.val - x.val by omega,
-    value_binary, list_drop_take_append_right _ _ _ _ hx]
+        grind [value_binary]⟩ := by
+  grind only [locateCut, value_binary, list_drop_take_append_right _ _ _ _ hx]
 
 lemma lcaHeightRaw_idempotent_eq_height {cs : List (FactorizationTree A)} {i : ℕ} :
     lcaHeightRaw (.idempotent cs) i = (idempotent cs).height ↔
@@ -958,27 +864,12 @@ lemma lcaHeightRaw_idempotent_eq_height {cs : List (FactorizationTree A)} {i : �
 lemma locateCut_cons_mid (c : FactorizationTree A) (cs : List (FactorizationTree A))
     (hcs : cs ≠ []) :
     locateCut (c :: cs) c.value.length = .inl none := by
-  cases cs with
-  | nil => contradiction
-  | cons c' cs' =>
-    dsimp [locateCut]
-    split_ifs with h1 h2
-    · omega
-    · rfl
-    · omega
+  grind only [locateCut]
 
 lemma locateCut_cons_left (c : FactorizationTree A) (cs : List (FactorizationTree A))
     {i : ℕ} (hi : i < c.value.length) :
     locateCut (c :: cs) i = .inl (some (⟨c, by simp⟩, i)) := by
-  cases cs with
-  | nil =>
-    dsimp [locateCut]
-    split_ifs
-    rfl
-  | cons c' cs' =>
-    dsimp [locateCut]
-    split_ifs
-    rfl
+  grind only [locateCut]
 
 lemma lcaHeightRaw_idempotent_cons_left (c : FactorizationTree A) (cs : List (FactorizationTree A))
     {i : ℕ} (hi : i < c.value.length) :
@@ -995,104 +886,76 @@ lemma lcaHeightRaw_idempotent_cons_left_lt (c : FactorizationTree A)
 
 lemma locateCut_singleton_length (c : FactorizationTree A) :
     locateCut [c] c.value.length = .inr () := by
-  dsimp [locateCut]
-  split_ifs with h
-  · omega
-  · rfl
+  grind only [locateCut]
 
 lemma lcaHeightRaw_idempotent_singleton_length (c : FactorizationTree A) :
     lcaHeightRaw (.idempotent [c]) c.value.length = 0 := by
   rw [lcaHeightRaw, locateCut_singleton_length]
 
+lemma locateCut_cons_right (c : FactorizationTree A) (cs : List (FactorizationTree A))
+    {i : ℕ} (hi : c.value.length < i) :
+    locateCut (c :: cs) i =
+      match locateCut cs (i - c.value.length) with
+      | .inr () => .inr ()
+      | .inl none => .inl none
+      | .inl (some (⟨c', hc'⟩, idx)) => .inl (some (⟨c', by simp [hc']⟩, idx)) := by
+  cases cs <;> grind only [locateCut]
+
 lemma locateCut_at_length (cs : List (FactorizationTree A))
     (h_ne : ∀ c ∈ cs, c.value ≠ []) :
     locateCut cs (listValue cs).length = .inr () := by
   induction cs with
-  | nil =>
-    rfl
+  | nil => rfl
   | cons c cs ih =>
     cases cs with
     | nil =>
       have : (listValue [c]).length = c.value.length := by simp [listValue]
-      exact this ▸ locateCut_singleton_length c
+      rw [this, locateCut_singleton_length]
     | cons c' cs' =>
-      dsimp [locateCut]
-      have hc' := h_ne c' (by simp)
-      have hc'_pos : 0 < c'.value.length := by
+      have h_gt : c.value.length < (listValue (c :: c' :: cs')).length := by
+        have hc' := h_ne c' (by simp)
         cases h : c'.value
-        · exact False.elim (hc' h)
-        · simp
-      have h_tail_pos : 0 < (listValue (c' :: cs')).length := by
-        rw [listValue_cons, List.length_append]
-        omega
-      split_ifs with h1 h2
-      · have : (c.value ++ (c'.value ++ listValue cs')).length =
-            c.value.length + (listValue (c' :: cs')).length := by
-          simp [listValue_cons, List.length_append]
-        omega
-      · have : (c.value ++ (c'.value ++ listValue cs')).length =
-            c.value.length + (listValue (c' :: cs')).length := by
-          simp [listValue_cons, List.length_append]
-        omega
-      · have h_sub : (c.value ++ (c'.value ++ listValue cs')).length - c.value.length =
-            (listValue (c' :: cs')).length := by
-          simp [listValue_cons, List.length_append]
-        rw [h_sub]
-        have ih_res := ih (fun d hd ↦ h_ne d (by simp [hd]))
-        rw [ih_res]
+        · contradiction
+        · simp [listValue_cons, h]
+      have h_sub : (listValue (c :: c' :: cs')).length - c.value.length =
+          (listValue (c' :: cs')).length := by
+        simp [listValue_cons]
+      rw [locateCut_cons_right c (c' :: cs') h_gt, h_sub,
+        ih (fun d hd ↦ h_ne d (by simp [hd]))]
 
 lemma lcaHeightRaw_at_length {S : Type*} [Semigroup S] {eval : List A → S} (t : FactorizationTree A)
     (ht : t.IsRamsey eval) :
     lcaHeightRaw t t.value.length = 0 := by
   induction t using FactorizationTree.induction_on with
-  | h_leaf a =>
-    rw [lcaHeightRaw]
+  | h_leaf a => rw [lcaHeightRaw]
   | h_binary l r ih_l ih_r =>
     rw [isRamsey_binary] at ht
-    have hr_ne := tree_value_ne_nil r ht.2
-    have hr_pos : 0 < r.value.length := by
+    have hr : l.value.length < (binary l r).value.length := by
       cases h : r.value
-      · exact False.elim (hr_ne h)
-      · simp
-    rw [lcaHeightRaw]
-    rw [value_binary, List.length_append]
-    split_ifs with h1 h2
-    · omega
-    · omega
-    · have h_sub : l.value.length + r.value.length - l.value.length = r.value.length := by omega
-      exact h_sub.symm ▸ ih_r ht.2
+      · exact False.elim (tree_value_ne_nil r ht.2 h)
+      · rw [value_binary, List.length_append, h, List.length_cons]; omega
+    rw [lcaHeightRaw_binary_right l r hr]
+    have h_sub : (binary l r).value.length - l.value.length = r.value.length := by
+      rw [value_binary, List.length_append]; omega
+    rw [h_sub, ih_r ht.2]
   | h_idempotent children ih =>
     rw [isRamsey_idempotent] at ht
-    rcases ht with ⟨hlen, hlist, e, he, he_eval⟩
-    have h_ne : ∀ c ∈ children, c.value ≠ [] := fun c hc ↦
-      tree_value_ne_nil c ((listIsRamsey_iff eval children).mp hlist c hc)
-    rw [lcaHeightRaw]
-    have h_loc := locateCut_at_length children h_ne
-    have h_val := value_idempotent children
-    rw [h_val, h_loc]
+    have h_ne c hc := tree_value_ne_nil c ((listIsRamsey_iff eval children).mp ht.2.1 c hc)
+    rw [lcaHeightRaw, value_idempotent, locateCut_at_length children h_ne]
 
 lemma splitRelation_idempotent_cases {c : FactorizationTree A} {cs : List (FactorizationTree A)}
     (hcs : cs ≠ [])
     {x y : Fin ((idempotent (c :: cs)).value.length + 1)} (_hxy : x < y)
     (hrel : SplitRelation (treeToSplit (.idempotent (c :: cs))) x y) :
     y.val < c.value.length ∨ c.value.length ≤ x.val := by
-  set nc := c.value.length
   by_contra! ⟨hy, hx⟩
-  have h_mid_val : lcaHeightRaw (.idempotent (c :: cs)) nc = (idempotent (c :: cs)).height := by
-    rw [lcaHeightRaw, locateCut_cons_mid c cs hcs]
-  let mid : Fin ((idempotent (c :: cs)).value.length + 1) := ⟨nc, by
-    have : (idempotent (c :: cs)).value = c.value ++ listValue cs := by
-      rw [value_idempotent, listValue_cons]
-    rw [this]; simp only [List.length_append]; omega⟩
-  have h_mid_ht : (treeToSplit (.idempotent (c :: cs)) mid).val =
-      (idempotent (c :: cs)).height := by
-    rw [treeToSplit_val, h_mid_val]
-  have hx_ht : (treeToSplit (.idempotent (c :: cs)) x).val < (idempotent (c :: cs)).height := by
-    rw [treeToSplit_val]
-    exact lcaHeightRaw_idempotent_cons_left_lt c cs hx
+  let mid : Fin ((idempotent (c :: cs)).value.length + 1) :=
+    ⟨c.value.length, by have := y.isLt; omega⟩
+  have h_mid : (treeToSplit (.idempotent (c :: cs)) mid).val = (idempotent (c :: cs)).height := by
+    rw [treeToSplit_val, lcaHeightRaw, locateCut_cons_mid c cs hcs]
   have hlt : treeToSplit (.idempotent (c :: cs)) x < treeToSplit (.idempotent (c :: cs)) mid := by
-    rw [Fin.lt_def, h_mid_ht]
-    exact hx_ht
+    rw [Fin.lt_def, h_mid, treeToSplit_val]
+    exact lcaHeightRaw_idempotent_cons_left_lt c cs hx
   exact not_splitRelation_of_between_lt (treeToSplit (.idempotent (c :: cs)))
     (Fin.le_iff_val_le_val.mpr hx.le) (Fin.le_iff_val_le_val.mpr hy) hlt hrel
 
@@ -1170,51 +1033,14 @@ lemma splitRelation_idempotent_left {c : FactorizationTree A}
       rfl
     exact this ▸ h_bet_val
 
-lemma locateCut_cons_right (c : FactorizationTree A) (cs : List (FactorizationTree A))
-    {i : ℕ} (hi : c.value.length < i) :
-    locateCut (c :: cs) i =
-      match locateCut cs (i - c.value.length) with
-      | .inr () => .inr ()
-      | .inl none => .inl none
-      | .inl (some (⟨c', hc'⟩, idx)) => .inl (some (⟨c', by simp [hc']⟩, idx)) := by
-  cases cs with
-  | nil =>
-    dsimp [locateCut]
-    split_ifs with h1
-    · omega
-    · rfl
-  | cons c' cs' =>
-    dsimp [locateCut]
-    split_ifs with h1 h2
-    · omega
-    · omega
-    · rfl
-
 lemma lcaHeightRaw_idempotent_cons_right_of_lt (c : FactorizationTree A)
     (cs : List (FactorizationTree A)) {i : ℕ} (hi : c.value.length < i)
     (hlt : lcaHeightRaw (.idempotent (c :: cs)) i < (idempotent (c :: cs)).height) :
     lcaHeightRaw (.idempotent (c :: cs)) i =
     lcaHeightRaw (.idempotent cs) (i - c.value.length) := by
-  have h_loc : locateCut (c :: cs) i =
-      match locateCut cs (i - c.value.length) with
-      | .inr () => .inr ()
-      | .inl none => .inl none
-      | .inl (some (⟨c', hc'⟩, idx)) => .inl (some (⟨c', by simp [hc']⟩, idx)) :=
-    locateCut_cons_right c cs hi
-  rw [lcaHeightRaw, h_loc]
-  cases h : locateCut cs (i - c.value.length) with
-  | inr u =>
-    rw [lcaHeightRaw, h]
-  | inl opt =>
-    cases opt with
-    | none =>
-      have h1 : locateCut (c :: cs) i = .inl none := by rw [h_loc, h]
-      have h2 : lcaHeightRaw (.idempotent (c :: cs)) i = (idempotent (c :: cs)).height := by
-        rw [lcaHeightRaw, h1]
-      omega
-    | some pair =>
-      rcases pair with ⟨⟨c', hc'⟩, idx⟩
-      rw [lcaHeightRaw, h]
+  rw [lcaHeightRaw, locateCut_cons_right c cs hi] at hlt ⊢
+  rw [lcaHeightRaw]
+  grind
 
 lemma length_idempotent_cons (c : FactorizationTree A) (cs : List (FactorizationTree A)) :
     (idempotent (c :: cs)).value.length = c.value.length + (idempotent cs).value.length := by
@@ -1341,28 +1167,14 @@ lemma splitRelation_idempotent_cons_right {c : FactorizationTree A}
 
 lemma locateCut_singleton_ne_inl_none (c : FactorizationTree A) (i : ℕ) :
     locateCut [c] i ≠ .inl none := by
-  dsimp [locateCut]
-  split_ifs <;> intro h <;> cases h
+  grind only [locateCut]
 
 lemma locateCut_cons_cons_inl_none_iff (c c' : FactorizationTree A)
     (cs : List (FactorizationTree A)) (i : ℕ) :
     locateCut (c :: c' :: cs) i = .inl none ↔
     i = c.value.length ∨ (c.value.length < i ∧ locateCut (c' :: cs)
     (i - c.value.length) = .inl none) := by
-  simp only [locateCut]
-  split_ifs with h1 h2
-  · simp [h1.ne, not_lt.mpr h1.le]
-  · simp [h2]
-  · have h_gt : c.value.length < i := by omega
-    cases h : locateCut (c' :: cs) (i - c.value.length) with
-    | inr u =>
-      simp [h2]
-    | inl opt =>
-      cases opt with
-      | none =>
-        simp [h_gt]
-      | some pair =>
-        simp [h2]
+  grind only [locateCut]
 
 lemma locateCut_nil (i : ℕ) : locateCut ([] : List (FactorizationTree A)) i = .inr () := rfl
 
@@ -1376,39 +1188,16 @@ lemma eval_take_of_locateCut_eq_none {S : Type*} [Semigroup S]
     {i : ℕ} (hi : locateCut cs i = .inl none) :
     eval ((listValue cs).take i) = e := by
   induction cs generalizing i with
-  | nil =>
-    rw [locateCut_nil] at hi
-    cases hi
+  | nil => cases hi
   | cons c cs' ih =>
     cases cs' with
-    | nil =>
-      exact False.elim (locateCut_singleton_ne_inl_none c i hi)
+    | nil => exact (locateCut_singleton_ne_inl_none c i hi).elim
     | cons c' cs'' =>
       rw [locateCut_cons_cons_inl_none_iff] at hi
-      rcases hi with rfl | ⟨h_gt, h_tail⟩
-      · rw [listValue_cons]
-        have h_take : (c.value ++ listValue (c' :: cs'')).take c.value.length = c.value :=
-          List.take_left
-        exact h_take.symm ▸ h_eval c (.head _)
-      · rw [listValue_cons]
-        have ih_res := ih (fun x hx ↦ h_eval x (.tail _ hx))
-          (fun x hx ↦ h_ne x (.tail _ hx)) h_tail
-        have h_take : (c.value ++ listValue (c' :: cs'')).take i =
-            c.value ++ (listValue (c' :: cs'')).take (i - c.value.length) := by
-          rw [List.take_append, List.take_of_length_le (by omega)]
-        rw [h_take]
-        have h_c_ne := h_ne c (.head _)
-        have h_tail_ne : (listValue (c' :: cs'')).take (i - c.value.length) ≠ [] := by
-          intro h_nil
-          have h_len := congrArg List.length h_nil
-          simp only [List.length_take, List.length_nil] at h_len
-          have hc'_ne := h_ne c' (by simp)
-          have : 1 ≤ (listValue (c' :: cs'')).length := by
-            simp only [listValue_cons, List.length_append]
-            have := List.length_pos_iff_ne_nil.mpr hc'_ne
-            omega
-          omega
-        rw [hmul _ _ h_c_ne h_tail_ne, h_eval c (.head _), ih_res, he]
+      rw [listValue_cons]
+      rcases hi with rfl | ⟨h_gt, _⟩
+      · grind
+      · grind [List.take_append, List.take_of_length_le h_gt.le]
 
 lemma eval_slice_of_locateCut_eq_none {S : Type*} [Semigroup S]
     (eval : List A → S)
@@ -1422,50 +1211,34 @@ lemma eval_slice_of_locateCut_eq_none {S : Type*} [Semigroup S]
     (hy : locateCut cs y = .inl none) :
     eval (((listValue cs).drop x).take (y - x)) = e := by
   induction cs generalizing x y with
-  | nil =>
-    rw [locateCut_nil] at hx
-    cases hx
+  | nil => cases hx
   | cons c cs' ih =>
     cases cs' with
-    | nil =>
-      exact False.elim (locateCut_singleton_ne_inl_none c x hx)
+    | nil => exact (locateCut_singleton_ne_inl_none c x hx).elim
     | cons c' cs'' =>
       rw [locateCut_cons_cons_inl_none_iff] at hx hy
       rcases hx with rfl | ⟨hx_gt, hx_tail⟩
-      · rcases hy with rfl | ⟨hy_gt, hy_tail⟩
-        · omega
-        · rw [listValue_cons]
-          have h_drop : (c.value ++ listValue (c' :: cs'')).drop c.value.length =
-              listValue (c' :: cs'') := List.drop_left
-          exact h_drop.symm ▸ eval_take_of_locateCut_eq_none eval hmul e he (c' :: cs'')
-            (fun z hz ↦ h_eval z (.tail _ hz)) (fun z hz ↦ h_ne z (.tail _ hz)) hy_tail
-      · rcases hy with rfl | ⟨hy_gt, hy_tail⟩
-        · omega
-        · rw [listValue_cons]
-          have h_slice := list_drop_take_append_right c.value (listValue (c' :: cs'')) x y hx_gt.le
-          rw [h_slice]
-          have h_diff : y - x = y - c.value.length - (x - c.value.length) := by omega
-          rw [h_diff]
-          have hxy_sub : x - c.value.length < y - c.value.length := by omega
-          exact ih (fun z hz ↦ h_eval z (.tail _ hz))
-            (fun z hz ↦ h_ne z (.tail _ hz)) hxy_sub hx_tail hy_tail
+      · rw [listValue_cons, List.drop_left]
+        grind [eval_take_of_locateCut_eq_none eval hmul e he (c' :: cs'')]
+      · rw [listValue_cons, list_drop_take_append_right _ _ _ _ hx_gt.le]
+        have : y - x = (y - c.value.length) - (x - c.value.length) := by omega
+        rw [this]
+        exact ih (fun z hz ↦ h_eval z (.tail _ hz)) (fun z hz ↦ h_ne z (.tail _ hz))
+          (by omega) hx_tail (hy.resolve_left (by omega)).2
 
 lemma treeToSplit_leaf_isRamsey {S : Type*} [Semigroup S]
     (eval : List A → S)
     (hmul : ∀ u v, u ≠ [] → v ≠ [] → eval (u ++ v) = eval u * eval v)
     (a : A) :
     IsRamsey (wordLabeling eval hmul (FactorizationTree.leaf a).value) (treeToSplit (.leaf a)) := by
-  refine ⟨fun x y z _ _ _ _ ↦ by
+  constructor
+  · intro x y z _ _ _ _
     have := z.isLt
-    simp only [value_leaf] at this
-    grind,
-  fun x y u v _ _ _ _ _ ↦ by
-    have hx := x.isLt
-    have hy := y.isLt
-    have hu := u.isLt
-    have hv := v.isLt
-    simp only [value_leaf] at hx hy hu hv
-    grind⟩
+    grind [value_leaf]
+  · intro x y u v _ _ _ _ _
+    have := y.isLt
+    have := v.isLt
+    grind [value_leaf]
 
 lemma idempotent_of_lt {S : Type*} [Semigroup S]
     (eval : List A → S)
