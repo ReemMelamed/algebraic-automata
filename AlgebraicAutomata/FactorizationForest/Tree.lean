@@ -1496,16 +1496,8 @@ lemma idempotent_of_lt {S : Type*} [Semigroup S]
   induction cs with
   | nil =>
     intro _ _ _ _
-    refine ⟨fun x y _ _ ↦ by
-      have hx := x.isLt
-      have hy := y.isLt
-      simp [value_idempotent, listValue] at hx hy
-      omega,
-    fun x y _ _ _ ↦ by
-      have hx := x.isLt
-      have hy := y.isLt
-      simp [value_idempotent, listValue] at hx hy
-      omega⟩
+    constructor <;> intro x y <;> intros <;>
+      have := x.isLt <;> have := y.isLt <;> simp [value_idempotent, listValue] at *; omega
   | cons c cs ih_cs =>
     intro h_eval h_ne h_ramsey ih_trees
     have hc_ramsey := h_ramsey c (.head _)
@@ -1514,305 +1506,139 @@ lemma idempotent_of_lt {S : Type*} [Semigroup S]
       (fun d hd ↦ h_ne d (.tail _ hd))
       (fun d hd ↦ h_ramsey d (.tail _ hd))
       (fun d hd ↦ ih_trees d (.tail _ hd))
+    have h_gt {w : Fin ((idempotent (c :: cs)).value.length + 1)}
+        (hw_ge : c.value.length ≤ w.val)
+        (hw_lt : (treeToSplit (.idempotent (c :: cs)) w).val < (idempotent (c :: cs)).height)
+        (hcs_ne : cs ≠ []) : c.value.length < w.val := by
+      by_contra!
+      have hw_eq : w.val = c.value.length := by omega
+      have h_ht : (treeToSplit (.idempotent (c :: cs)) w).val = (idempotent (c :: cs)).height := by
+        rw [treeToSplit_val, hw_eq, lcaHeightRaw, locateCut_cons_mid c cs hcs_ne]
+      omega
+    have h_cs_lt {w : Fin ((idempotent (c :: cs)).value.length + 1)}
+        (hw_gt : c.value.length < w.val)
+        (hw_lt : (treeToSplit (.idempotent (c :: cs)) w).val < (idempotent (c :: cs)).height) :
+        (treeToSplit (.idempotent cs) ⟨w.val - c.value.length, by
+          have := w.isLt
+          have := length_idempotent_cons c cs; omega⟩).val < (idempotent cs).height := by
+      rw [treeToSplit_val]
+      have h1 : lcaHeightRaw (.idempotent cs) (w.val - c.value.length) =
+          lcaHeightRaw (.idempotent (c :: cs)) w.val := by
+        have := lcaHeightRaw_idempotent_cons_right_of_lt c cs hw_gt
+        rw [treeToSplit_val] at hw_lt
+        exact (this hw_lt).symm
+      rw [h1]
+      by_contra! h_ge
+      have h_none : locateCut cs (w.val - c.value.length) = .inl none :=
+        lcaHeightRaw_idempotent_eq_height.mp (by
+          have := lcaHeightRaw_le_height (.idempotent cs) (w.val - c.value.length)
+          omega)
+      have h_top : lcaHeightRaw (.idempotent (c :: cs)) w.val = (idempotent (c :: cs)).height := by
+        rw [lcaHeightRaw, locateCut_cons_right c cs hw_gt, h_none]
+      rw [treeToSplit_val] at hw_lt
+      omega
     by_cases hcs_emp : cs = []
     · subst hcs_emp
-      have hc_val : (idempotent [c]).value = c.value := by
-        simp [value_idempotent, listValue]
-      have hc_len : (idempotent [c]).value.length = c.value.length :=
-        congrArg List.length hc_val
       let toC (w : Fin ((idempotent [c]).value.length + 1)) : Fin (c.value.length + 1) :=
-        ⟨w.val, by
-          have := w.isLt
-          simp [value_idempotent, listValue] at this
-          omega⟩
-      have h_split_val : ∀ (i : Fin ((idempotent [c]).value.length + 1)),
+        ⟨w.val, by have := w.isLt; simp [value_idempotent, listValue] at this; omega⟩
+      have h_split_val (i : Fin ((idempotent [c]).value.length + 1)) :
           (treeToSplit (.idempotent [c]) i).val = (treeToSplit c (toC i)).val := by
-        intro i
-        rw [treeToSplit_val, treeToSplit_val]
-        have hi_le : i.val ≤ c.value.length := Nat.le_of_lt_succ (toC i).isLt
-        rcases lt_or_eq_of_le hi_le with hi_lt | hi_eq
-        · rw [lcaHeightRaw_idempotent_cons_left c [] hi_lt]
-        · rw [hi_eq, lcaHeightRaw_idempotent_singleton_length,
-            lcaHeightRaw_at_length c hc_ramsey]
-      have h_rel_to_c : ∀ {a b : Fin ((idempotent [c]).value.length + 1)},
-          SplitRelation (treeToSplit (.idempotent [c])) a b →
+        simp only [treeToSplit_val]
+        rcases lt_or_eq_of_le (Nat.le_of_lt_succ (toC i).isLt) with h | h
+        · rw [lcaHeightRaw_idempotent_cons_left c [] h]
+        · rw [h, lcaHeightRaw_idempotent_singleton_length, lcaHeightRaw_at_length c hc_ramsey]
+      have h_rel_to_c {a b : Fin ((idempotent [c]).value.length + 1)}
+          (hrel : SplitRelation (treeToSplit (.idempotent [c])) a b) :
           SplitRelation (treeToSplit c) (toC a) (toC b) := by
-        intro a b hrel
         constructor
-        · have h1 := congrArg Fin.val hrel.1
-          rw [h_split_val a, h_split_val b] at h1
-          exact Fin.ext h1
+        · exact Fin.ext (by rw [← h_split_val, ← h_split_val, congrArg Fin.val hrel.1])
         · intro z hz1 hz2
-          have hz_val_bound : z.val < (idempotent [c]).value.length + 1 := by
-            simp [value_idempotent, listValue]
-          let z_idem : Fin ((idempotent [c]).value.length + 1) := ⟨z.val, hz_val_bound⟩
-          have hz1_idem : min a b ≤ z_idem := hz1
-          have hz2_idem : z_idem ≤ max a b := hz2
-          have h_bet := hrel.2 z_idem hz1_idem hz2_idem
+          have hz1_idem : min a b ≤ ⟨z.val, by simp [value_idempotent, listValue]⟩ := hz1
+          have hz2_idem : ⟨z.val, by simp [value_idempotent, listValue]⟩ ≤ max a b := hz2
+          have h_bet := hrel.2 _ hz1_idem hz2_idem
           have h_bet_val := Fin.le_def.mp h_bet
-          have hz_eq : toC z_idem = z := Fin.ext rfl
-          rw [h_split_val z_idem, hz_eq] at h_bet_val
-          rw [Fin.le_def]
-          rcases le_total a b with hab | hba
-          · have hab_c : toC a ≤ toC b := hab
-            rw [min_eq_left hab] at h_bet_val
-            rw [h_split_val a] at h_bet_val
-            exact (min_eq_left hab_c).symm ▸ h_bet_val
-          · have hba_c : toC b ≤ toC a := hba
-            rw [min_eq_right hba] at h_bet_val
-            rw [h_split_val b] at h_bet_val
-            exact (min_eq_right hba_c).symm ▸ h_bet_val
+          have hz_eq : toC ⟨z.val, by simp [value_idempotent, listValue]⟩ = z := rfl
+          rw [h_split_val ⟨z.val, _⟩, hz_eq] at h_bet_val
+          grind
       constructor
       · intro x y z hxy hyz hx_lt hrel_xy hrel_yz
-        have hxy_c : toC x < toC y := hxy
-        have hyz_c : toC y < toC z := hyz
-        have hrel_xy_c := h_rel_to_c hrel_xy
-        have hrel_yz_c := h_rel_to_c hrel_yz
-        have hy_le : y.val ≤ c.value.length := Nat.le_of_lt_succ (toC y).isLt
-        have h_wl := wordLabeling_idempotent_left eval hmul c [] x y hxy.le hy_le
-        exact h_wl ▸ ih_c.1 _ _ _ hxy_c hyz_c hrel_xy_c hrel_yz_c
+        rw [wordLabeling_idempotent_left eval hmul c [] x y hxy.le (Nat.le_of_lt_succ (toC y).isLt)]
+        exact ih_c.1 _ _ _ hxy hyz (h_rel_to_c hrel_xy) (h_rel_to_c hrel_yz)
       · intro x y u v hxy huv hx_lt hrel_xy hrel_uv hrel_xu
-        have hxy_c : toC x < toC y := hxy
-        have huv_c : toC u < toC v := huv
-        have hrel_xy_c := h_rel_to_c hrel_xy
-        have hrel_uv_c := h_rel_to_c hrel_uv
-        have hrel_xu_c := h_rel_to_c hrel_xu
-        have hy_le : y.val ≤ c.value.length := Nat.le_of_lt_succ (toC y).isLt
-        have hv_le : v.val ≤ c.value.length := Nat.le_of_lt_succ (toC v).isLt
-        have h_wl_xy := wordLabeling_idempotent_left eval hmul c [] x y hxy.le hy_le
-        have h_wl_uv := wordLabeling_idempotent_left eval hmul c [] u v huv.le hv_le
-        exact h_wl_xy ▸ h_wl_uv ▸ ih_c.2 _ _ _ _ hxy_c huv_c hrel_xy_c hrel_uv_c hrel_xu_c
+        rw [wordLabeling_idempotent_left eval hmul c [] x y hxy.le (Nat.le_of_lt_succ (toC y).isLt),
+            wordLabeling_idempotent_left eval hmul c [] u v huv.le
+              (Nat.le_of_lt_succ (toC v).isLt)]
+        exact ih_c.2 _ _ _ _ hxy huv (h_rel_to_c hrel_xy) (h_rel_to_c hrel_uv) (h_rel_to_c hrel_xu)
     · constructor
       · intro x y z hxy hyz hx_lt hrel_xy hrel_yz
         rcases splitRelation_idempotent_cases hcs_emp hxy hrel_xy with hy_lt | hx_ge
-        · rcases splitRelation_idempotent_cases hcs_emp hyz hrel_yz with hz_lt | hy_ge
-          · have hrel_xy_c := splitRelation_idempotent_left hxy hy_lt hrel_xy
-            have hrel_yz_c := splitRelation_idempotent_left hyz hz_lt hrel_yz
-            have h_wl := wordLabeling_idempotent_left eval hmul c cs x y hxy.le hy_lt.le
-            rw [h_wl]
-            have hxy_c : (⟨x.val, by omega⟩ : Fin (c.value.length + 1)) < ⟨y.val, by omega⟩ := hxy
-            have hyz_c : (⟨y.val, by omega⟩ : Fin (c.value.length + 1)) < ⟨z.val, by omega⟩ := hyz
-            exact ih_c.1 _ _ _ hxy_c hyz_c hrel_xy_c hrel_yz_c
-          · omega
-        · rcases splitRelation_idempotent_cases hcs_emp hyz hrel_yz with hz_lt | hy_ge
-          · omega
-          · have hx_gt : c.value.length < x.val := by
-              by_contra!
-              have hx_eq : x.val = c.value.length := by omega
-              have h_mid := locateCut_cons_mid c cs hcs_emp
-              have h_ht : (treeToSplit (.idempotent (c :: cs)) x).val =
-                  (idempotent (c :: cs)).height := by
-                rw [treeToSplit_val, hx_eq, lcaHeightRaw, h_mid]
-              omega
-            have hy_gt : c.value.length < y.val := by omega
-            have hrel_xy_cs := splitRelation_idempotent_cons_right hxy hx_gt hx_lt hrel_xy
-            have hy_lt_ht : (treeToSplit (.idempotent (c :: cs)) y).val <
-                (idempotent (c :: cs)).height := by
-              have h1 := congrArg Fin.val hrel_xy.1
-              omega
-            have hrel_yz_cs := splitRelation_idempotent_cons_right hyz hy_gt hy_lt_ht hrel_yz
-            have h_wl := wordLabeling_idempotent_cons_right eval hmul c cs x y hx_ge hxy.le
-            rw [h_wl]
-            have hxy_cs : (⟨x.val - c.value.length, by
-                have := x.isLt
-                have h_len := length_idempotent_cons c cs
-                omega⟩ :
-                Fin ((idempotent cs).value.length + 1)) <
-              ⟨y.val - c.value.length, by
-                have := y.isLt
-                have h_len := length_idempotent_cons c cs
-                omega⟩ := by
-              rw [Fin.lt_def]
-              dsimp
-              omega
-            have hyz_cs : (⟨y.val - c.value.length, by
-                have := y.isLt
-                have h_len := length_idempotent_cons c cs
-                omega⟩ :
-                Fin ((idempotent cs).value.length + 1)) <
-              ⟨z.val - c.value.length, by
-                have := z.isLt
-                have h_len := length_idempotent_cons c cs
-                omega⟩ := by
-              rw [Fin.lt_def]
-              dsimp
-              omega
-            have hx_cs_lt : (treeToSplit (.idempotent cs) ⟨x.val - c.value.length, by
-                have := x.isLt
-                have h_len := length_idempotent_cons c cs
-                omega⟩).val <
-                (idempotent cs).height := by
-              rw [treeToSplit_val]
-              have h1 : lcaHeightRaw (.idempotent cs) (x.val - c.value.length) =
-                  lcaHeightRaw (.idempotent (c :: cs)) x.val := by
-                have := lcaHeightRaw_idempotent_cons_right_of_lt c cs hx_gt
-                rw [treeToSplit_val] at hx_lt
-                exact (this hx_lt).symm
-              rw [h1]
-              by_contra! h_ge
-              have h_eq : lcaHeightRaw (.idempotent (c :: cs)) x.val =
-                  (idempotent cs).height := by
-                have h_le := lcaHeightRaw_le_height (.idempotent cs) (x.val - c.value.length)
-                omega
-              have h_none : locateCut cs (x.val - c.value.length) = .inl none := by
-                have h_le := lcaHeightRaw_le_height (.idempotent cs) (x.val - c.value.length)
-                have h_loc_eq : lcaHeightRaw (.idempotent cs) (x.val - c.value.length) =
-                    (idempotent cs).height := by omega
-                exact lcaHeightRaw_idempotent_eq_height.mp h_loc_eq
-              have h_loc_c : locateCut (c :: cs) x.val = .inl none := by
-                rw [locateCut_cons_right c cs hx_gt, h_none]
-              have h_top : lcaHeightRaw (.idempotent (c :: cs)) x.val =
-                  (idempotent (c :: cs)).height := by
-                rw [lcaHeightRaw, h_loc_c]
-              rw [treeToSplit_val] at hx_lt
-              omega
-            exact ih_tail.1 _ _ _ hxy_cs hyz_cs hx_cs_lt hrel_xy_cs hrel_yz_cs
+        · have hz_lt : z.val < c.value.length := by
+            rcases splitRelation_idempotent_cases hcs_emp hyz hrel_yz with h | h <;> omega
+          rw [wordLabeling_idempotent_left eval hmul c cs x y hxy.le hy_lt.le]
+          exact ih_c.1 _ _ _ hxy hyz
+            (splitRelation_idempotent_left hxy hy_lt hrel_xy)
+            (splitRelation_idempotent_left hyz hz_lt hrel_yz)
+        · have hx_gt := h_gt hx_ge hx_lt hcs_emp
+          have hy_gt : c.value.length < y.val := by omega
+          have hy_lt_ht :
+            (treeToSplit (.idempotent (c :: cs)) y).val < (idempotent (c :: cs)).height := by
+            rw [← congrArg Fin.val hrel_xy.1]; exact hx_lt
+          rw [wordLabeling_idempotent_cons_right eval hmul c cs x y hx_ge hxy.le]
+          exact ih_tail.1 _ _ _ (Fin.lt_def.2 (by grind)) (Fin.lt_def.2 (by grind))
+            (h_cs_lt hx_gt hx_lt)
+            (splitRelation_idempotent_cons_right hxy hx_gt hx_lt hrel_xy)
+            (splitRelation_idempotent_cons_right hyz hy_gt hy_lt_ht hrel_yz)
       · intro x y u v hxy huv hx_lt hrel_xy hrel_uv hrel_xu
         rcases splitRelation_idempotent_cases hcs_emp hxy hrel_xy with hy_lt | hx_ge
         · have hu_lt : u.val < c.value.length := by
-            rcases lt_trichotomy x u with hxu | rxu | hux
-            · rcases splitRelation_idempotent_cases hcs_emp hxu hrel_xu with
-                hu_lt' | hx_gt' <;> grind
-            · rw [← rxu]
-              omega
-            · grind
-          rcases splitRelation_idempotent_cases hcs_emp huv hrel_uv with hv_lt | hu_ge
-          · have hrel_xy_c := splitRelation_idempotent_left hxy hy_lt hrel_xy
-            have hrel_uv_c := splitRelation_idempotent_left huv hv_lt hrel_uv
-            have h_wl_xy := wordLabeling_idempotent_left eval hmul c cs x y hxy.le hy_lt.le
-            have h_wl_uv := wordLabeling_idempotent_left eval hmul c cs u v huv.le hv_lt.le
-            rw [h_wl_xy, h_wl_uv]
-            have hrel_xu_c : SplitRelation (treeToSplit c) ⟨x.val, by omega⟩ ⟨u.val, by omega⟩ := by
-              rcases lt_trichotomy x u with hxu | rxu | hux
-              · exact splitRelation_idempotent_left hxu hu_lt hrel_xu
-              · subst rxu
-                exact splitRelation_refl _ _
-              · have hrel_ux : SplitRelation (treeToSplit (.idempotent (c :: cs))) u x := by
-                  rw [splitRelation_comm]
-                  exact hrel_xu
-                have := splitRelation_idempotent_left hux (by omega) hrel_ux
-                rwa [splitRelation_comm]
-            have hxy_c : (⟨x.val, by omega⟩ : Fin (c.value.length + 1)) < ⟨y.val, by omega⟩ := hxy
-            have huv_c : (⟨u.val, by omega⟩ : Fin (c.value.length + 1)) < ⟨v.val, by omega⟩ := huv
-            exact ih_c.2 _ _ _ _ hxy_c huv_c hrel_xy_c hrel_uv_c hrel_xu_c
-          · omega
-        · have hx_gt : c.value.length < x.val := by
-            by_contra!
-            have hx_eq : x.val = c.value.length := by omega
-            have h_mid := locateCut_cons_mid c cs hcs_emp
-            have h_ht : (treeToSplit (.idempotent (c :: cs)) x).val =
-                (idempotent (c :: cs)).height := by
-              rw [treeToSplit_val, hx_eq, lcaHeightRaw, h_mid]
-            omega
+            by_cases h : x < u
+            · rcases splitRelation_idempotent_cases hcs_emp h hrel_xu with h' | h' <;> omega
+            · omega
+          have hv_lt : v.val < c.value.length := by
+            rcases splitRelation_idempotent_cases hcs_emp huv hrel_uv with h | h <;> omega
+          have hrel_xu_c : SplitRelation (treeToSplit c) ⟨x.val, by omega⟩ ⟨u.val, by omega⟩ := by
+            rcases lt_trichotomy x u with h | rfl | h
+            · exact splitRelation_idempotent_left h hu_lt hrel_xu
+            · exact splitRelation_refl _ _
+            · have := splitRelation_idempotent_left h (by omega) (by rwa [splitRelation_comm])
+              rwa [splitRelation_comm]
+          rw [wordLabeling_idempotent_left eval hmul c cs x y hxy.le hy_lt.le,
+              wordLabeling_idempotent_left eval hmul c cs u v huv.le hv_lt.le]
+          exact ih_c.2 _ _ _ _ hxy huv
+            (splitRelation_idempotent_left hxy hy_lt hrel_xy)
+            (splitRelation_idempotent_left huv hv_lt hrel_uv)
+            hrel_xu_c
+        · have hx_gt := h_gt hx_ge hx_lt hcs_emp
           have hu_gt : c.value.length < u.val := by
-            rcases lt_trichotomy x u with hxu | rxu | hux
-            · rcases splitRelation_idempotent_cases hcs_emp hxu hrel_xu with hu_lt' | hx_gt'
-              · omega
-              · by_contra!
-                have hu_eq : u.val = c.value.length := by omega
-                have h_mid := locateCut_cons_mid c cs hcs_emp
-                have h_ht : (treeToSplit (.idempotent (c :: cs)) u).val =
-                    (idempotent (c :: cs)).height := by
-                  rw [treeToSplit_val, hu_eq, lcaHeightRaw, h_mid]
-                have h1 := congrArg Fin.val hrel_xu.1
-                omega
-            · exact rxu.symm ▸ hx_gt
+            by_cases hux : u < x
             · have hrel_ux : SplitRelation (treeToSplit (.idempotent (c :: cs))) u x := by
-                rw [splitRelation_comm]
-                exact hrel_xu
-              rcases splitRelation_idempotent_cases hcs_emp hux hrel_ux with hx_lt' | hu_gt'
-              · omega
-              · by_contra!
-                have hu_eq : u.val = c.value.length := by omega
-                have h_mid := locateCut_cons_mid c cs hcs_emp
-                have h_ht : (treeToSplit (.idempotent (c :: cs)) u).val =
-                    (idempotent (c :: cs)).height := by
-                  rw [treeToSplit_val, hu_eq, lcaHeightRaw, h_mid]
-                have h1 := congrArg Fin.val hrel_xu.1
-                omega
-          rcases splitRelation_idempotent_cases hcs_emp huv hrel_uv with hv_lt | hu_ge
-          · omega
-          · have hrel_xy_cs := splitRelation_idempotent_cons_right hxy hx_gt hx_lt hrel_xy
-            have hu_lt_ht : (treeToSplit (.idempotent (c :: cs)) u).val <
-                (idempotent (c :: cs)).height := by
-              have h1 := congrArg Fin.val hrel_xu.1
-              omega
-            have hrel_uv_cs := splitRelation_idempotent_cons_right huv hu_gt hu_lt_ht hrel_uv
-            have hrel_xu_cs : SplitRelation (treeToSplit (.idempotent cs))
-                ⟨x.val - c.value.length, by
-                  have := x.isLt
-                  have h_len := length_idempotent_cons c cs
-                  omega⟩
-                ⟨u.val - c.value.length, by
-                  have := u.isLt
-                  have h_len := length_idempotent_cons c cs
-                  omega⟩ := by
-              rcases lt_trichotomy x u with hxu | rxu | hux
-              · exact splitRelation_idempotent_cons_right hxu hx_gt hx_lt hrel_xu
-              · subst rxu
-                exact splitRelation_refl _ _
-              · have hrel_ux : SplitRelation (treeToSplit (.idempotent (c :: cs))) u x := by
-                  rw [splitRelation_comm]
-                  exact hrel_xu
-                have := splitRelation_idempotent_cons_right hux hu_gt hu_lt_ht hrel_ux
                 rwa [splitRelation_comm]
-            have h_wl_xy := wordLabeling_idempotent_cons_right eval hmul c cs x y hx_ge hxy.le
-            have h_wl_uv := wordLabeling_idempotent_cons_right eval hmul c cs u v hu_ge huv.le
-            rw [h_wl_xy, h_wl_uv]
-            have hxy_cs : (⟨x.val - c.value.length, by
-                have := x.isLt
-                have h_len := length_idempotent_cons c cs
-                omega⟩ :
-                Fin ((idempotent cs).value.length + 1)) <
-              ⟨y.val - c.value.length, by
-                have := y.isLt
-                have h_len := length_idempotent_cons c cs
-                omega⟩ := by
-              rw [Fin.lt_def]
-              dsimp
-              omega
-            have huv_cs : (⟨u.val - c.value.length, by
-                have := u.isLt
-                have h_len := length_idempotent_cons c cs
-                omega⟩ :
-                Fin ((idempotent cs).value.length + 1)) <
-              ⟨v.val - c.value.length, by
-                have := v.isLt
-                have h_len := length_idempotent_cons c cs
-                omega⟩ := by
-              rw [Fin.lt_def]
-              dsimp
-              omega
-            have hx_cs_lt : (treeToSplit (.idempotent cs) ⟨x.val - c.value.length, by
-                have := x.isLt
-                have h_len := length_idempotent_cons c cs
-                omega⟩).val <
-                (idempotent cs).height := by
-              rw [treeToSplit_val]
-              have h1 : lcaHeightRaw (.idempotent cs) (x.val - c.value.length) =
-                  lcaHeightRaw (.idempotent (c :: cs)) x.val := by
-                have := lcaHeightRaw_idempotent_cons_right_of_lt c cs hx_gt
-                rw [treeToSplit_val] at hx_lt
-                exact (this hx_lt).symm
-              rw [h1]
-              by_contra! h_ge
-              have h_eq : lcaHeightRaw (.idempotent (c :: cs)) x.val =
-                  (idempotent cs).height := by
-                have h_le := lcaHeightRaw_le_height (.idempotent cs) (x.val - c.value.length)
-                omega
-              have h_none : locateCut cs (x.val - c.value.length) = .inl none := by
-                have h_le := lcaHeightRaw_le_height (.idempotent cs) (x.val - c.value.length)
-                have h_loc_eq : lcaHeightRaw (.idempotent cs) (x.val - c.value.length) =
-                    (idempotent cs).height := by omega
-                exact lcaHeightRaw_idempotent_eq_height.mp h_loc_eq
-              have h_loc_c : locateCut (c :: cs) x.val = .inl none := by
-                rw [locateCut_cons_right c cs hx_gt, h_none]
-              have h_top : lcaHeightRaw (.idempotent (c :: cs)) x.val =
-                  (idempotent (c :: cs)).height := by
-                rw [lcaHeightRaw, h_loc_c]
-              rw [treeToSplit_val] at hx_lt
-              omega
-            exact ih_tail.2 _ _ _ _ hxy_cs huv_cs hx_cs_lt hrel_xy_cs hrel_uv_cs hrel_xu_cs
+              rcases splitRelation_idempotent_cases hcs_emp hux hrel_ux with h | h
+              · omega
+              · exact h_gt h (by rw [← congrArg Fin.val hrel_xu.1]; exact hx_lt) hcs_emp
+            · omega
+          have hu_lt_ht :
+            (treeToSplit (.idempotent (c :: cs)) u).val < (idempotent (c :: cs)).height := by
+            rw [← congrArg Fin.val hrel_xu.1]; exact hx_lt
+          have hrel_xu_cs : SplitRelation (treeToSplit (.idempotent cs))
+              ⟨x.val - c.value.length, by
+                have := x.isLt; have := length_idempotent_cons c cs; omega⟩
+              ⟨u.val - c.value.length, by
+                have := u.isLt; have := length_idempotent_cons c cs; omega⟩ := by
+            rcases lt_trichotomy x u with h | rfl | h
+            · exact splitRelation_idempotent_cons_right h hx_gt hx_lt hrel_xu
+            · exact splitRelation_refl _ _
+            · have :=
+                splitRelation_idempotent_cons_right h hu_gt hu_lt_ht (by rwa [splitRelation_comm])
+              rwa [splitRelation_comm]
+          have hu_ge : c.value.length ≤ u.val := hu_gt.le
+          rw [wordLabeling_idempotent_cons_right eval hmul c cs x y hx_ge hxy.le,
+              wordLabeling_idempotent_cons_right eval hmul c cs u v hu_ge huv.le]
+          exact ih_tail.2 _ _ _ _ (Fin.lt_def.2 (by grind)) (Fin.lt_def.2 (by grind))
+            (h_cs_lt hx_gt hx_lt)
+            (splitRelation_idempotent_cons_right hxy hx_gt hx_lt hrel_xy)
+            (splitRelation_idempotent_cons_right huv hu_gt hu_lt_ht hrel_uv)
+            hrel_xu_cs
 
 theorem tree_to_split_isRamsey {S : Type*} [Semigroup S]
     (eval : List A → S)
@@ -1837,15 +1663,15 @@ theorem tree_to_split_isRamsey {S : Type*} [Semigroup S]
       · rw [wordLabeling_binary_right eval hmul l r x y hx_gt.le hxy.le]
         exact ihr.1 _ _ _ (Fin.lt_def.2 (by grind)) (Fin.lt_def.2 (by grind))
           (splitRelation_binary_right hxy hx_gt hrel_xy)
-          (splitRelation_binary_right hyz (by trivial) hrel_yz)
+          (splitRelation_binary_right hyz (by omega) hrel_yz)
     · intro x y u v hxy huv hrel_xy hrel_uv hrel_xu
       rcases splitRelation_binary_cases hxy hrel_xy with hy_lt | hx_gt
       · have hu_lt : u.val < l.value.length := by
           by_contra!
-          rcases splitRelation_binary_cases (show x < u by omega) hrel_xu with h | h <;> omega
-        rcases splitRelation_binary_cases huv hrel_uv with hv_lt | hu_gt
-        swap
-        · omega
+          have hxu : x < u := by omega
+          rcases splitRelation_binary_cases hxu hrel_xu with h | h <;> omega
+        have hv_lt : v.val < l.value.length := by
+          rcases splitRelation_binary_cases huv hrel_uv with h | h <;> omega
         rw [wordLabeling_binary_left eval hmul l r x y hxy.le (by omega),
             wordLabeling_binary_left eval hmul l r u v huv.le (by omega)]
         exact ihl.2 _ _ _ _ hxy huv
@@ -1857,14 +1683,15 @@ theorem tree_to_split_isRamsey {S : Type*} [Semigroup S]
               · grind [splitRelation_binary_left h (by omega) (by grind)])
       · have hu_gt : l.value.length < u.val := by
           by_contra!
-          rcases splitRelation_binary_cases (show u < x by omega)
-            (by rw [splitRelation_comm]; exact hrel_xu) with h | h <;> omega
-        rcases splitRelation_binary_cases huv hrel_uv with hv_lt | hu_gt'; · omega
+          have hux : u < x := by omega
+          have hrel_ux : SplitRelation (treeToSplit (.binary l r)) u x := by
+            rwa [splitRelation_comm]
+          rcases splitRelation_binary_cases hux hrel_ux with h | h <;> omega
         rw [wordLabeling_binary_right eval hmul l r x y hx_gt.le hxy.le,
             wordLabeling_binary_right eval hmul l r u v hu_gt.le huv.le]
         exact ihr.2 _ _ _ _ (Fin.lt_def.2 (by grind)) (Fin.lt_def.2 (by grind))
           (splitRelation_binary_right hxy hx_gt hrel_xy)
-          (splitRelation_binary_right huv hu_gt' hrel_uv)
+          (splitRelation_binary_right huv hu_gt hrel_uv)
           (by rcases lt_trichotomy x u with h | rfl | h
               · exact splitRelation_binary_right h hx_gt hrel_xu
               · exact splitRelation_refl _ _
