@@ -73,6 +73,9 @@ def height (t : FactorizationTree A) : ℕ :=
 termination_by t
 
 @[simp]
+lemma height_leaf (a : A) : (leaf a).height = 0 := by rw [height]
+
+@[simp]
 lemma height_binary (l r : FactorizationTree A) :
   (binary l r).height = 1 + max l.height r.height := by
   rw [height]
@@ -1443,6 +1446,94 @@ lemma locateCut_cons_cons_inl_none_iff (c c' : FactorizationTree A)
       | some pair =>
         simp [h2]
 
+lemma locateCut_nil (i : ℕ) : locateCut ([] : List (FactorizationTree A)) i = .inr () := rfl
+
+lemma eval_take_of_locateCut_eq_none {S : Type*} [Semigroup S]
+    (eval : List A → S)
+    (hmul : ∀ u v, u ≠ [] → v ≠ [] → eval (u ++ v) = eval u * eval v)
+    (e : S) (he : e * e = e)
+    (cs : List (FactorizationTree A))
+    (h_eval : ∀ c ∈ cs, eval c.value = e)
+    (h_ne : ∀ c ∈ cs, c.value ≠ [])
+    {i : ℕ} (hi : locateCut cs i = .inl none) :
+    eval ((listValue cs).take i) = e := by
+  induction cs generalizing i with
+  | nil =>
+    rw [locateCut_nil] at hi
+    cases hi
+  | cons c cs' ih =>
+    cases cs' with
+    | nil =>
+      exact False.elim (locateCut_singleton_ne_inl_none c i hi)
+    | cons c' cs'' =>
+      rw [locateCut_cons_cons_inl_none_iff] at hi
+      rcases hi with rfl | ⟨h_gt, h_tail⟩
+      · rw [listValue_cons]
+        have h_take : (c.value ++ listValue (c' :: cs'')).take c.value.length = c.value :=
+          List.take_left
+        rw [h_take]
+        exact h_eval c (.head _)
+      · rw [listValue_cons]
+        have ih_res := ih (fun x hx ↦ h_eval x (.tail _ hx))
+          (fun x hx ↦ h_ne x (.tail _ hx)) h_tail
+        have h_take : (c.value ++ listValue (c' :: cs'')).take i =
+            c.value ++ (listValue (c' :: cs'')).take (i - c.value.length) := by
+          rw [List.take_append, List.take_of_length_le (by omega)]
+        rw [h_take]
+        have h_c_ne := h_ne c (.head _)
+        have h_tail_ne : (listValue (c' :: cs'')).take (i - c.value.length) ≠ [] := by
+          intro h_nil
+          have h_len := congrArg List.length h_nil
+          simp only [List.length_take, List.length_nil] at h_len
+          have hc'_ne := h_ne c' (by simp)
+          have : 1 ≤ (listValue (c' :: cs'')).length := by
+            simp only [listValue_cons, List.length_append]
+            have := List.length_pos_iff_ne_nil.mpr hc'_ne
+            omega
+          omega
+        rw [hmul _ _ h_c_ne h_tail_ne, h_eval c (.head _), ih_res, he]
+
+lemma eval_slice_of_locateCut_eq_none {S : Type*} [Semigroup S]
+    (eval : List A → S)
+    (hmul : ∀ u v, u ≠ [] → v ≠ [] → eval (u ++ v) = eval u * eval v)
+    (e : S) (he : e * e = e)
+    (cs : List (FactorizationTree A))
+    (h_eval : ∀ c ∈ cs, eval c.value = e)
+    (h_ne : ∀ c ∈ cs, c.value ≠ [])
+    {x y : ℕ} (hxy : x < y)
+    (hx : locateCut cs x = .inl none)
+    (hy : locateCut cs y = .inl none) :
+    eval (((listValue cs).drop x).take (y - x)) = e := by
+  induction cs generalizing x y with
+  | nil =>
+    rw [locateCut_nil] at hx
+    cases hx
+  | cons c cs' ih =>
+    cases cs' with
+    | nil =>
+      exact False.elim (locateCut_singleton_ne_inl_none c x hx)
+    | cons c' cs'' =>
+      rw [locateCut_cons_cons_inl_none_iff] at hx hy
+      rcases hx with rfl | ⟨hx_gt, hx_tail⟩
+      · rcases hy with rfl | ⟨hy_gt, hy_tail⟩
+        · omega
+        · rw [listValue_cons]
+          have h_drop : (c.value ++ listValue (c' :: cs'')).drop c.value.length =
+              listValue (c' :: cs'') := List.drop_left
+          rw [h_drop]
+          exact eval_take_of_locateCut_eq_none eval hmul e he (c' :: cs'')
+            (fun z hz ↦ h_eval z (.tail _ hz)) (fun z hz ↦ h_ne z (.tail _ hz)) hy_tail
+      · rcases hy with rfl | ⟨hy_gt, hy_tail⟩
+        · omega
+        · rw [listValue_cons]
+          have h_slice := list_drop_take_append_right c.value (listValue (c' :: cs'')) x y hx_gt.le
+          rw [h_slice]
+          have h_diff : y - x = y - c.value.length - (x - c.value.length) := by omega
+          rw [h_diff]
+          have hxy_sub : x - c.value.length < y - c.value.length := by omega
+          exact ih (fun z hz ↦ h_eval z (.tail _ hz))
+            (fun z hz ↦ h_ne z (.tail _ hz)) hxy_sub hx_tail hy_tail
+
 lemma treeToSplit_leaf_isRamsey {S : Type*} [Semigroup S]
     (eval : List A → S)
     (hmul : ∀ u v, u ≠ [] → v ≠ [] → eval (u ++ v) = eval u * eval v)
@@ -1543,13 +1634,20 @@ lemma idempotent_of_lt {S : Type*} [Semigroup S]
           have hz2_idem : z_idem ≤ max a b := hz2
           have h_bet := hrel.2 z_idem hz1_idem hz2_idem
           have h_bet_val := Fin.le_def.mp h_bet
-          rw [h_split_val z_idem] at h_bet_val
+          have hz_eq : toC z_idem = z := Fin.ext rfl
+          rw [h_split_val z_idem, hz_eq] at h_bet_val
           rw [Fin.le_def]
           rcases le_total a b with hab | hba
           · have hab_c : toC a ≤ toC b := hab
-            simpa [min_eq_left hab, min_eq_left hab_c, h_split_val a] using h_bet_val
+            rw [min_eq_left hab] at h_bet_val
+            rw [h_split_val a] at h_bet_val
+            rw [min_eq_left hab_c]
+            exact h_bet_val
           · have hba_c : toC b ≤ toC a := hba
-            simpa [min_eq_right hba, min_eq_right hba_c, h_split_val b] using h_bet_val
+            rw [min_eq_right hba] at h_bet_val
+            rw [h_split_val b] at h_bet_val
+            rw [min_eq_right hba_c]
+            exact h_bet_val
       refine ⟨?_, ?_⟩
       · intro x y z hxy hyz hx_lt hrel_xy hrel_yz
         have hxy_c : toC x < toC y := hxy
@@ -1661,7 +1759,8 @@ lemma idempotent_of_lt {S : Type*} [Semigroup S]
         rcases splitRelation_idempotent_cases hcs_emp hxy hrel_xy with hy_lt | hx_ge
         · have hu_lt : u.val < c.value.length := by
             rcases lt_trichotomy x u with hxu | rxu | hux
-            · rcases splitRelation_idempotent_cases hcs_emp hxu hrel_xu with hu_lt' | hx_gt' <;> grind
+            · rcases splitRelation_idempotent_cases hcs_emp hxu hrel_xu with
+                hu_lt' | hx_gt' <;> grind
             · rw [← rxu]
               omega
             · grind
