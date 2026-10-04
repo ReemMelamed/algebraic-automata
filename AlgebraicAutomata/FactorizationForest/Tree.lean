@@ -305,15 +305,11 @@ lemma split_to_tree_inner {n : ℕ} (m : ℕ) (_ : m < n)
         have h_rel_ik : SplitRelation s i k :=
           splitRelation_of_le_between s hik (Fin.ext (by omega))
             (fun z hz1 hz2 ↦ Fin.le_iff_val_le_val.2
-              (by
-                rw [hsi]
-                exact h_between z hz1 (hz2.trans hkj)))
+              (by exact  hsi ▸ h_between z hz1 (hz2.trans hkj)))
         have h_rel_kj : SplitRelation s k j :=
           splitRelation_of_le_between s hkj (Fin.ext (by omega))
             (fun z hz1 hz2 ↦ Fin.le_iff_val_le_val.2
-              (by
-                rw [hsk]
-                exact h_between z (hik.trans hz1) hz2))
+              (by exact hsk ▸ h_between z (hik.trans hz1) hz2))
         obtain ⟨h_color_idem, h_color_eq, h_eval_ij_ik, -, h_eval_kj_eq_ij⟩ :=
           isRamsey_idem_step h_ramsey hik hkj h_rel_ik h_rel_kj
         have h_eval_ik_eq_ij := h_eval_ij_ik.symm
@@ -374,8 +370,7 @@ lemma split_to_tree_outer {n : ℕ}
       simp only [FactorizationTree.value_leaf, t]
       rw [hj_eq]
       have h_diff : (i : ℕ) + 1 - (i : ℕ) = 1 := by omega
-      rw [h_diff]
-      exact (list_drop_take_one u i.val hi_lt).symm
+      exact h_diff.symm ▸ (list_drop_take_one u i.val hi_lt).symm
     refine ⟨t, ht_val, FactorizationTree.leaf_isRamsey eval _, by simp [t]⟩
   | succ m' ih_m' =>
     intro hm i j hij h_less
@@ -590,9 +585,7 @@ theorem factorization_forest_theorem {A S : Type*} [Semigroup S] [Fintype S]
         have h_rel_2r : SplitRelation s k_2 k_r :=
           splitRelation_of_le_between s hk2r (Fin.ext (by omega))
             (fun x _ _ ↦ Fin.le_iff_val_le_val.2
-              (by
-                rw [hk2_prop]
-                exact h_bound_all x))
+              (by exact hk2_prop ▸ h_bound_all x))
         obtain ⟨-, -, -, h_idem_ir, -⟩ :=
           isRamsey_idem_step h_ramsey hik2 hk2r h_rel_i2 h_rel_2r
         have h_inner := split_to_tree_inner eval hmul u m hm_lt s h_ramsey
@@ -819,11 +812,8 @@ lemma splitRelation_binary_cases {l r : FactorizationTree A}
         omega
       have h_min : min x y = x := min_eq_left hxy.le
       have h_max : max x y = y := max_eq_right hxy.le
-      have h_bet := hrel.2 mid (by
-        rw [h_min]
-        exact hx_le_mid) (by
-        rw [h_max]
-        exact h_mid_le_y)
+      have h_bet := hrel.2 mid (by exact h_min.symm ▸ hx_le_mid) (by
+        exact h_max.symm ▸ h_mid_le_y)
       rw [h_min] at h_bet
       have h_bet_val := Fin.le_iff_val_le_val.mp h_bet
       rw [treeToSplit_val, treeToSplit_val] at h_bet_val
@@ -886,8 +876,7 @@ lemma splitRelation_binary_left {l r : FactorizationTree A}
            (min x y).val := by
       change min x.val y.val = min x.val y.val
       rfl
-    rw [this]
-    exact h_bet_val
+    exact this ▸ h_bet_val
 
 lemma splitRelation_binary_right {l r : FactorizationTree A}
     {x y : Fin ((binary l r).value.length + 1)} (hxy : x < y)
@@ -951,8 +940,7 @@ lemma splitRelation_binary_right {l r : FactorizationTree A}
       change min (x.val - l.value.length)
         (y.val - l.value.length) = min x.val y.val - l.value.length
       omega
-    rw [h_min_eq]
-    exact h_bet_val
+    exact h_min_eq ▸ h_bet_val
 
 lemma wordLabeling_binary_left {S : Type*} [Semigroup S]
     (eval : List A → S)
@@ -1064,8 +1052,7 @@ lemma locateCut_at_length (cs : List (FactorizationTree A))
     cases cs with
     | nil =>
       have : (listValue [c]).length = c.value.length := by simp [listValue]
-      rw [this]
-      exact locateCut_singleton_length c
+      exact this ▸ locateCut_singleton_length c
     | cons c' cs' =>
       dsimp [locateCut]
       have hc' := h_ne c' (by simp)
@@ -1111,8 +1098,7 @@ lemma lcaHeightRaw_at_length {S : Type*} [Semigroup S] {eval : List A → S} (t 
     · omega
     · omega
     · have h_sub : l.value.length + r.value.length - l.value.length = r.value.length := by omega
-      rw [h_sub]
-      exact ih_r ht.2
+      exact h_sub.symm ▸ ih_r ht.2
   | h_idempotent children ih =>
     rw [isRamsey_idempotent] at ht
     rcases ht with ⟨hlen, hlist, e, he, he_eval⟩
@@ -1162,10 +1148,8 @@ lemma splitRelation_idempotent_cases {c : FactorizationTree A} {cs : List (Facto
     have h_min : min x y = x := min_eq_left hxy.le
     have h_max : max x y = y := max_eq_right hxy.le
     have h_bet := hrel.2 mid (by
-      rw [h_min]
-      exact hx_le_mid) (by
-      rw [h_max]
-      exact h_mid_le_y)
+      exact h_min.symm ▸ hx_le_mid) (by
+      exact h_max.symm ▸ h_mid_le_y)
     rw [h_min] at h_bet
     have h_bet_val := Fin.le_def.mp h_bet
     rw [treeToSplit_val, treeToSplit_val] at h_bet_val
@@ -1246,8 +1230,7 @@ lemma splitRelation_idempotent_left {c : FactorizationTree A}
            (min x y).val := by
       change min x.val y.val = min x.val y.val
       rfl
-    rw [this]
-    exact h_bet_val
+    exact this ▸ h_bet_val
 
 lemma locateCut_cons_right (c : FactorizationTree A) (cs : List (FactorizationTree A))
     {i : ℕ} (hi : c.value.length < i) :
@@ -1348,8 +1331,7 @@ lemma splitRelation_idempotent_cons_right {c : FactorizationTree A}
     exact lcaHeightRaw_idempotent_cons_right_of_lt c cs hz hz_lt
   have hy_lt : (treeToSplit (.idempotent (c :: cs)) y).val < (idempotent (c :: cs)).height := by
     have h1 := congrArg Fin.val hrel.1
-    rw [← h1]
-    exact hx_lt
+    exact h1.symm ▸ hx_lt
   refine ⟨?_, ?_⟩
   · have h1 := congrArg Fin.val hrel.1
     have hx_eq := H_val x hx hx_lt
@@ -1382,8 +1364,7 @@ lemma splitRelation_idempotent_cons_right {c : FactorizationTree A}
       have h_min_lt : (treeToSplit (.idempotent (c :: cs)) (min x y)).val <
           (idempotent (c :: cs)).height := by
         have : min x y = x := min_eq_left hxy.le
-        rw [this]
-        exact hx_lt
+        exact this.symm ▸ hx_lt
       rw [treeToSplit_val, treeToSplit_val] at h_bet_val
       omega
     have hz_eq := H_val z_idem hz_gt hz_idem_lt
@@ -1418,8 +1399,7 @@ lemma splitRelation_idempotent_cons_right {c : FactorizationTree A}
       rw [Fin.le_iff_val_le_val]
       dsimp
       omega
-    rw [h_min_small]
-    exact h_bet_val
+    exact h_min_small.symm ▸ h_bet_val
 
 lemma locateCut_singleton_ne_inl_none (c : FactorizationTree A) (i : ℕ) :
     locateCut [c] i ≠ .inl none := by
@@ -1471,8 +1451,7 @@ lemma eval_take_of_locateCut_eq_none {S : Type*} [Semigroup S]
       · rw [listValue_cons]
         have h_take : (c.value ++ listValue (c' :: cs'')).take c.value.length = c.value :=
           List.take_left
-        rw [h_take]
-        exact h_eval c (.head _)
+        exact h_take.symm ▸ h_eval c (.head _)
       · rw [listValue_cons]
         have ih_res := ih (fun x hx ↦ h_eval x (.tail _ hx))
           (fun x hx ↦ h_ne x (.tail _ hx)) h_tail
@@ -1520,8 +1499,7 @@ lemma eval_slice_of_locateCut_eq_none {S : Type*} [Semigroup S]
         · rw [listValue_cons]
           have h_drop : (c.value ++ listValue (c' :: cs'')).drop c.value.length =
               listValue (c' :: cs'') := List.drop_left
-          rw [h_drop]
-          exact eval_take_of_locateCut_eq_none eval hmul e he (c' :: cs'')
+          exact h_drop.symm ▸ eval_take_of_locateCut_eq_none eval hmul e he (c' :: cs'')
             (fun z hz ↦ h_eval z (.tail _ hz)) (fun z hz ↦ h_ne z (.tail _ hz)) hy_tail
       · rcases hy with rfl | ⟨hy_gt, hy_tail⟩
         · omega
@@ -1641,13 +1619,11 @@ lemma idempotent_of_lt {S : Type*} [Semigroup S]
           · have hab_c : toC a ≤ toC b := hab
             rw [min_eq_left hab] at h_bet_val
             rw [h_split_val a] at h_bet_val
-            rw [min_eq_left hab_c]
-            exact h_bet_val
+            exact (min_eq_left hab_c).symm ▸ h_bet_val
           · have hba_c : toC b ≤ toC a := hba
             rw [min_eq_right hba] at h_bet_val
             rw [h_split_val b] at h_bet_val
-            rw [min_eq_right hba_c]
-            exact h_bet_val
+            exact (min_eq_right hba_c).symm ▸ h_bet_val
       refine ⟨?_, ?_⟩
       · intro x y z hxy hyz hx_lt hrel_xy hrel_yz
         have hxy_c : toC x < toC y := hxy
@@ -1656,8 +1632,7 @@ lemma idempotent_of_lt {S : Type*} [Semigroup S]
         have hrel_yz_c := h_rel_to_c hrel_yz
         have hy_le : y.val ≤ c.value.length := Nat.le_of_lt_succ (toC y).isLt
         have h_wl := wordLabeling_idempotent_left eval hmul c [] x y hxy.le hy_le
-        rw [h_wl]
-        exact ih_c.1 _ _ _ hxy_c hyz_c hrel_xy_c hrel_yz_c
+        exact h_wl ▸ ih_c.1 _ _ _ hxy_c hyz_c hrel_xy_c hrel_yz_c
       · intro x y u v hxy huv hx_lt hrel_xy hrel_uv hrel_xu
         have hxy_c : toC x < toC y := hxy
         have huv_c : toC u < toC v := huv
@@ -1668,8 +1643,7 @@ lemma idempotent_of_lt {S : Type*} [Semigroup S]
         have hv_le : v.val ≤ c.value.length := Nat.le_of_lt_succ (toC v).isLt
         have h_wl_xy := wordLabeling_idempotent_left eval hmul c [] x y hxy.le hy_le
         have h_wl_uv := wordLabeling_idempotent_left eval hmul c [] u v huv.le hv_le
-        rw [h_wl_xy, h_wl_uv]
-        exact ih_c.2 _ _ _ _ hxy_c huv_c hrel_xy_c hrel_uv_c hrel_xu_c
+        exact h_wl_xy ▸ h_wl_uv ▸ ih_c.2 _ _ _ _ hxy_c huv_c hrel_xy_c hrel_uv_c hrel_xu_c
     · refine ⟨?_, ?_⟩
       · intro x y z hxy hyz hx_lt hrel_xy hrel_yz
         rcases splitRelation_idempotent_cases hcs_emp hxy hrel_xy with hy_lt | hx_ge
@@ -1804,8 +1778,7 @@ lemma idempotent_of_lt {S : Type*} [Semigroup S]
                   rw [treeToSplit_val, hu_eq, lcaHeightRaw, h_mid]
                 have h1 := congrArg Fin.val hrel_xu.1
                 omega
-            · rw [← rxu]
-              exact hx_gt
+            · exact rxu.symm ▸ hx_gt
             · have hrel_ux : SplitRelation (treeToSplit (.idempotent (c :: cs))) u x := by
                 rw [splitRelation_comm]
                 exact hrel_xu
@@ -2085,8 +2058,7 @@ theorem tree_to_split_isRamsey {S : Type*} [Semigroup S]
           (value_idempotent children)
         have h_wl : (wordLabeling eval hmul (idempotent children).value).σ x y = e := by
           dsimp [wordLabeling]
-          rw [h_val]
-          exact h_slice
+          exact h_val ▸ h_slice
         rw [h_wl, he]
       · have hx_lt : (treeToSplit (.idempotent children) x).val <
             (idempotent children).height := by
@@ -2129,14 +2101,12 @@ theorem tree_to_split_isRamsey {S : Type*} [Semigroup S]
           (value_idempotent children)
         have h_wl_xy : (wordLabeling eval hmul (idempotent children).value).σ x y = e := by
           dsimp [wordLabeling]
-          rw [h_val_xy]
-          exact h_slice_xy
+          exact h_val_xy ▸ h_slice_xy
         have h_val_uv := congrArg (fun w : List A ↦ eval ((w.drop u.val).take (v.val - u.val)))
           (value_idempotent children)
         have h_wl_uv : (wordLabeling eval hmul (idempotent children).value).σ u v = e := by
           dsimp [wordLabeling]
-          rw [h_val_uv]
-          exact h_slice_uv
+          exact h_val_uv ▸ h_slice_uv
         rw [h_wl_xy, h_wl_uv]
       · have hx_lt : (treeToSplit (.idempotent children) x).val <
             (idempotent children).height := by
