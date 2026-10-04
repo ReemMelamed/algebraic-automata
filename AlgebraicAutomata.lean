@@ -5,6 +5,7 @@ Authors: Re'em Melamed-Katz
 -/
 import AlgebraicAutomata.Mathlib.Algebra.Group.Opposite
 import AlgebraicAutomata.Mathlib.Data.List.SemigroupProd
+import AlgebraicAutomata.Mathlib.Data.List.Slice
 import AlgebraicAutomata.Semigroup.GreensRelations.Basic
 import AlgebraicAutomata.Semigroup.GreensRelations.MulSeq
 import AlgebraicAutomata.Semigroup.GreensRelations.Green
