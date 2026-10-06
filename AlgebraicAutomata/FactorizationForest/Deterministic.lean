@@ -43,15 +43,14 @@ def IsForwardRamsey {h : ℕ} (L : MultiplicativeLabeling S α) (s : Split α h)
     L.σ x y * L.σ x' y' = L.σ x y
 
 /-- A forward Ramsey split satisfies `σ(x, z) = σ(x, y)` for all `x < y < z` with
-`x ∼_s y ∼_s z` (Colcombet line 1340). -/
+`x ∼_s y ∼_s z`. -/
 lemma forwardRamsey_three_points {h : ℕ} {L : MultiplicativeLabeling S α} {s : Split α h}
     (hf : IsForwardRamsey L s) {x y z : α} (hxy : x < y) (hyz : y < z)
     (hrel_xy : SplitRelation s x y) (hrel_yz : SplitRelation s y z) :
     L.σ x z = L.σ x y :=
   (L.prop x y z hxy hyz).symm.trans (hf x y y z hxy hyz hrel_xy hrel_yz hrel_xy)
 
-/-- Remark 5.1 (Colcombet 2008): A split with uniform idempotent values on split-related
-pairs is forward Ramsey. -/
+/-- A split with uniform idempotent values on split-related pairs is forward Ramsey. -/
 lemma isForwardRamsey_of_idempotent_uniform {h : ℕ} (L : MultiplicativeLabeling S α) (s : Split α h)
     (h_idem : ∀ x y : α, x < y → SplitRelation s x y → L.σ x y * L.σ x y = L.σ x y)
     (h_unif : ∀ x y x' y' : α, x < y → x' < y' →
@@ -62,9 +61,8 @@ lemma isForwardRamsey_of_idempotent_uniform {h : ℕ} (L : MultiplicativeLabelin
   have h_eq := h_unif x y x' y' hxy hx'y' h_rel_xy h_rel_x'y' h_rel_xx'
   rw [← h_eq, h_idem x y hxy h_rel_xy]
 
-/-- Lemma 5.3 (Colcombet 2008): Let `a, b, c ∈ S` be such that `a * b = a`, `a * c = a`,
-and `a 𝒥 b` in a finite semigroup `S`. Then `b * c = b`. -/
-lemma lemma_5_3 [Finite S] {a b c : S} (hab : a * b = a) (hac : a * c = a)
+/-- In a finite semigroup, if `a * b = a`, `a * c = a`, and `a 𝒥 b`, then `b * c = b`. -/
+lemma mul_eq_of_isGreenJ_of_mul_eq_self [Finite S] {a b c : S} (hab : a * b = a) (hac : a * c = a)
     (hj : IsGreenJ a b) : b * c = b := by
   have hj_ab : IsGreenJ (a * b) b := hab.symm ▸ hj
   have hD : IsGreenD b (a * b) := (isGreenD_of_isGreenJ hj_ab).symm
@@ -80,8 +78,7 @@ end ForwardRamsey
 
 section Configurations
 
-/-- Condition (1) of a valid configuration: every subsegment product from `i` to `j`
-is `J`-related to `aᵢ`. -/
+/-- Every subsegment product from `i` to `j` in a configuration is `J`-related to `aᵢ`. -/
 def ConfigJRel (c : List S) : Prop :=
   ∀ (i j : ℕ) (hi : i < c.length) (hj : j < c.length), i ≤ j →
     have h_sub_ne : (c.drop i).take (j - i + 1) ≠ [] := by
@@ -89,16 +86,13 @@ def ConfigJRel (c : List S) : Prop :=
       omega
     IsGreenJ (listProdNE ((c.drop i).take (j - i + 1)) h_sub_ne) (c.get ⟨i, hi⟩)
 
-/-- Condition (2) of a valid configuration: elements form a strictly ascending
-chain in the Green `J`-order (`[aᵢ] < [aⱼ]` for all `i < j`). -/
+/-- Elements form a strictly ascending chain in the Green `J`-order (`[aᵢ] < [aⱼ]` for all `i < j`). -/
 def ConfigJChain (c : List S) : Prop :=
   ∀ (i j : ℕ) (hi : i < c.length) (hj : j < c.length), i < j →
     GreenJClass.mk (c.get ⟨i, hi⟩) < GreenJClass.mk (c.get ⟨j, hj⟩)
 
-/-- A configuration is *valid* (Colcombet Definition 5.1) if:
-1. `c ≠ []`
-2. `aᵢ ··· aⱼ 𝒥 aᵢ` for all `i ≤ j`
-3. `aᵢ <_𝒥 aⱼ` for all `i < j`. -/
+/-- A configuration is valid if it is nonempty, each subsegment product is `J`-related
+to its initial element, and its elements form a strictly ascending chain in the `J`-order. -/
 structure IsValidConfig (c : List S) : Prop where
   nonempty : c ≠ []
   j_rel : ConfigJRel c
@@ -152,14 +146,14 @@ theorem ConfigJChain.nodup_map (c : List S) (h : ConfigJChain c) :
   · exact False.elim (lt_irrefl _ (hij'.symm ▸ h j i hj hi hgt))
 
 /-- In a finite semigroup, the length of any valid configuration is bounded by the
-number of Green's `J`-classes (Colcombet line 1332). -/
+number of Green's `J`-classes. -/
 theorem IsValidConfig.length_le [Fintype S] (c : List S) (h : IsValidConfig c) :
     c.length ≤ Fintype.card (GreenJClass S) :=
   (c.length_map GreenJClass.mk).symm ▸ (h.j_chain.nodup_map c).length_le_card
 
 open Classical in
-/-- In a finite semigroup, the set of valid configurations is finite.
-Hence Colcombet's transducer is a deterministic *finite-state* automaton. -/
+/-- In a finite semigroup, the set of valid configurations is finite,
+making the transducer a deterministic finite-state automaton. -/
 noncomputable instance [Fintype S] : Fintype (ValidConfig S) := by
   let f : ValidConfig S → (Fin (Fintype.card (GreenJClass S)) → Option S) :=
     fun c i ↦ c.val[i.val]?
@@ -176,7 +170,7 @@ noncomputable instance [Fintype S] : Fintype (ValidConfig S) := by
       rw [List.getElem?_eq_none (by omega), List.getElem?_eq_none (by omega)]
   exact Fintype.ofInjective f hf
 
-/-- Ranking function on configurations (Colcombet line 1366):
+/-- Ranking function on configurations:
 Given an injection `h₀ : S → ℕ` reversing the `J`-order, returns `h₀(aₙ)` of the last element. -/
 def rankConfig (h₀ : S → ℕ) : List S → ℕ
   | [] => 0
@@ -294,7 +288,7 @@ lemma validConfigToFun_injective [Fintype S] :
   rwa [dite_eq_left hn₁, dite_eq_left hn₂] at h_app
 
 open Classical in
-/-- State complexity bound for Colcombet's deterministic transducer (Theorem 5.2):
+/-- State complexity bound for the deterministic transducer:
 The number of valid configurations is bounded by `|S|^|S|`. -/
 theorem card_validConfig_le [Fintype S] :
     Fintype.card (ValidConfig S) ≤ (Fintype.card S) ^ (Fintype.card S) := by
@@ -327,7 +321,7 @@ theorem maxValidK_isValid (c : ValidConfig S) (b : S) :
       candidateConfig_zero_isValid c.val c.property.nonempty b⟩⟩
   exact (Finset.mem_filter.mp (Finset.max'_mem _ h_ne)).2
 
-/-- The transition function of Colcombet's deterministic transducer (line 1364). -/
+/-- The transition function of the deterministic transducer. -/
 noncomputable def stepConfig (c : ValidConfig S) (b : S) : ValidConfig S :=
   ⟨candidateConfig c.val b (maxValidK c b), maxValidK_isValid c b⟩
 
@@ -342,7 +336,7 @@ lemma length_runAutomaton (q₀ : ValidConfig S) (u : List S) :
     (runAutomaton q₀ u).length = u.length + 1 :=
   List.length_scanl
 
-/-- The split produced by Colcombet's deterministic transducer on word `u` (Theorem 5.2). -/
+/-- The split produced by the deterministic transducer on word `u`. -/
 noncomputable def deterministicSplit {h : ℕ} (h₀ : S → Fin h)
     (q₀ : ValidConfig S) (u : List S) : Split (Fin (u.length + 1)) h :=
   fun i ↦
@@ -385,12 +379,12 @@ if `[a] <_𝒥 [b]`, then `h₀ b < h₀ a`. -/
 def IsOrderReversingRank {h : ℕ} (h₀ : S → Fin h) : Prop :=
   ∀ a b : S, GreenJClass.mk a < GreenJClass.mk b → h₀ b < h₀ a
 
-/-- Transition property for the deterministic transducer (Colcombet 2008, Lemma 5.4):
+/-- Transition property for the deterministic transducer:
 Along any run of the transducer on a word `u`, when positions `x < y` are split-related under
 `s = deterministicSplit h₀ q₀ u` with an order-reversing injection `h₀`, the evaluated slice
 `L.σ x y` between them satisfies `a * L.σ x y = a` and `a 𝒥 L.σ x y`, where `a` is the last
 element of the configuration at position `x`. -/
-axiom deterministic_transducer_transition_lemma [Finite S] {h : ℕ} (h₀ : S → Fin h)
+axiom deterministicTransducer_transition [Finite S] {h : ℕ} (h₀ : S → Fin h)
     (h_inj : Function.Injective h₀) (h_rev : IsOrderReversingRank h₀)
     (q₀ : ValidConfig S) (u : List S)
     (L : MultiplicativeLabeling S (Fin (u.length + 1)))
@@ -406,7 +400,7 @@ axiom deterministic_transducer_transition_lemma [Finite S] {h : ℕ} (h₀ : S �
       exact x.isLt⟩
     state_x.last * L.σ x y = state_x.last ∧ IsGreenJ state_x.last (L.σ x y)
 
-/-- The deterministic split produced by Colcombet's transducer on any word `u` is a forward
+/-- The deterministic split produced on any word `u` is a forward
 Ramsey split for any multiplicative labeling `L` evaluating slices of `u`. -/
 theorem deterministicSplit_isForwardRamsey [Finite S] {h : ℕ} (h₀ : S → Fin h)
     (h_inj : Function.Injective h₀) (h_rev : IsOrderReversingRank h₀)
@@ -431,15 +425,15 @@ theorem deterministicSplit_isForwardRamsey [Finite S] {h : ℕ} (h₀ : S → Fi
     dsimp [s, deterministicSplit] at h_rank
     exact h_inj h_rank
   obtain ⟨h_ab, h_j⟩ :=
-    deterministic_transducer_transition_lemma h₀ h_inj h_rev q₀ u L hL x y hxy hrel_xy
+    deterministicTransducer_transition h₀ h_inj h_rev q₀ u L hL x y hxy hrel_xy
   obtain ⟨h_ac', _⟩ :=
-    deterministic_transducer_transition_lemma h₀ h_inj h_rev q₀ u L hL x' y' hx'y' hrel_x'y'
+    deterministicTransducer_transition h₀ h_inj h_rev q₀ u L hL x' y' hx'y' hrel_x'y'
   rw [← h_last_xx'] at h_ac'
-  exact lemma_5_3 h_ab h_ac' h_j
+  exact mul_eq_of_isGreenJ_of_mul_eq_self h_ab h_ac' h_j
 
-/-- For any finite semigroup `S`, there exists a deterministic automaton producing a forward
-Ramsey split on every input word (Colcombet Theorem 5.2). -/
-theorem colcombet_transducer_theorem [Finite S] {h : ℕ} (h₀ : S → Fin h)
+/-- For any finite semigroup `S`, the deterministic transducer produces a forward
+Ramsey split on every input word. -/
+theorem deterministicTransducer_forwardRamsey [Finite S] {h : ℕ} (h₀ : S → Fin h)
     (h_inj : Function.Injective h₀) (h_rev : IsOrderReversingRank h₀)
     (q₀ : ValidConfig S) (u : List S)
     (L : MultiplicativeLabeling S (Fin (u.length + 1)))
@@ -459,10 +453,10 @@ noncomputable def deterministicSplit_map {A : Type*} {h : ℕ} (h₀ : S → Fin
     rw [List.length_map]
     exact i.isLt⟩
 
-/-- Generalization of Colcombet's deterministic transducer theorem to an arbitrary alphabet `A`
-and morphism `φ : A → S` (Colcombet Theorem 5.2):
+/-- Generalization of the deterministic transducer construction to an arbitrary alphabet `A`
+and mapping `φ : A → S`:
 The deterministic transducer outputs a forward Ramsey split on every input word `u ∈ A⁺`. -/
-theorem colcombet_transducer_mulHom [Finite S] {A : Type*} {h : ℕ} (h₀ : S → Fin h)
+theorem deterministicSplit_map_isForwardRamsey [Finite S] {A : Type*} {h : ℕ} (h₀ : S → Fin h)
     (h_inj : Function.Injective h₀) (h_rev : IsOrderReversingRank h₀)
     (q₀ : ValidConfig S) (φ : A → S) (u : List A)
     (L : MultiplicativeLabeling S (Fin ((u.map φ).length + 1)))
@@ -473,7 +467,7 @@ theorem colcombet_transducer_mulHom [Finite S] {A : Type*} {h : ℕ} (h₀ : S �
         omega
       L.σ i j = listProdNE (((u.map φ).drop i.val).take (j.val - i.val)) hne) :
     IsForwardRamsey L (deterministicSplit h₀ q₀ (u.map φ)) :=
-  colcombet_transducer_theorem h₀ h_inj h_rev q₀ (u.map φ) L hL
+  deterministicTransducer_forwardRamsey h₀ h_inj h_rev q₀ (u.map φ) L hL
 
 end DeterministicRamsey
 
