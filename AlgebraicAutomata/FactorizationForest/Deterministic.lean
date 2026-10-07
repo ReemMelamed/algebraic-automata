@@ -86,7 +86,7 @@ def ConfigJRel (c : List S) : Prop :=
       omega
     IsGreenJ (listProdNE ((c.drop i).take (j - i + 1)) h_sub_ne) (c.get ⟨i, hi⟩)
 
-/-- Elements form a strictly ascending chain in the Green `J`-order (`[aᵢ] < [aⱼ]` for all `i < j`). -/
+/-- Elements form a strictly ascending chain in the Green `J`-order. -/
 def ConfigJChain (c : List S) : Prop :=
   ∀ (i j : ℕ) (hi : i < c.length) (hj : j < c.length), i < j →
     GreenJClass.mk (c.get ⟨i, hi⟩) < GreenJClass.mk (c.get ⟨j, hj⟩)

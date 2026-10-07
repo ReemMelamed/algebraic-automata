@@ -94,24 +94,24 @@ lemma balancedTree_val_height {A : Type*} (d : A) (v : List A) (hv : v ≠ []) :
             exact Nat.zero_le _
         | cons b rest' => grind
     · have hlen_ge : 2 ≤ v.length := by omega
-      have h1_lt : (v.take (v.length / 2)).length < k := by
+      have h_take_lt : (v.take (v.length / 2)).length < k := by
         rw [← hlen, List.length_take]
         omega
-      have h2_lt : (v.drop (v.length / 2)).length < k := by
+      have h_drop_lt : (v.drop (v.length / 2)).length < k := by
         rw [← hlen, List.length_drop]
         omega
-      obtain ⟨ih1_val, ih1_ht⟩ := ih _ h1_lt _ (take_ne_nil hlen_ge) rfl
-      obtain ⟨ih2_val, ih2_ht⟩ := ih _ h2_lt _ (drop_ne_nil hlen_ge) rfl
-      have h1_len : (v.take (v.length / 2)).length ≤ (v.length + 1) / 2 := by
+      obtain ⟨ih_take_val, ih_take_ht⟩ := ih _ h_take_lt _ (take_ne_nil hlen_ge) rfl
+      obtain ⟨ih_drop_val, ih_drop_ht⟩ := ih _ h_drop_lt _ (drop_ne_nil hlen_ge) rfl
+      have h_take_len : (v.take (v.length / 2)).length ≤ (v.length + 1) / 2 := by
         simp only [List.length_take]
         omega
-      have h2_len : (v.drop (v.length / 2)).length ≤ (v.length + 1) / 2 := by
+      have h_drop_len : (v.drop (v.length / 2)).length ≤ (v.length + 1) / 2 := by
         simp only [List.length_drop]
         omega
       have hmax : max (balancedTree d (v.take (v.length / 2))).height
           (balancedTree d (v.drop (v.length / 2))).height ≤ log2Ceil ((v.length + 1) / 2) :=
-        max_le (ih1_ht.trans (log2Ceil_monotone h1_len)) (ih2_ht.trans (log2Ceil_monotone h2_len))
-      refine ⟨by simp only [value_binary, ih1_val, ih2_val, List.take_append_drop], ?_⟩
+        max_le (ih_take_ht.trans (log2Ceil_monotone h_take_len)) (ih_drop_ht.trans (log2Ceil_monotone h_drop_len))
+      refine ⟨by simp only [value_binary, ih_take_val, ih_drop_val, List.take_append_drop], ?_⟩
       rw [height_binary, ← hlen, log2Ceil_of_two_le hlen_ge]
       omega
 
@@ -137,15 +137,15 @@ lemma balancedTree_isRamsey {A S : Type*} [Semigroup S] (eval : List A → S) (d
       | nil => contradiction
       | cons a rest => cases rest <;> [exact FactorizationTree.leaf_isRamsey eval a; grind]
     · have hlen_ge : 2 ≤ v.length := by omega
-      have h1_lt : (v.take (v.length / 2)).length < k := by
+      have h_take_lt : (v.take (v.length / 2)).length < k := by
         simp only [← hlen, List.length_take]
         omega
-      have h2_lt : (v.drop (v.length / 2)).length < k := by
+      have h_drop_lt : (v.drop (v.length / 2)).length < k := by
         simp only [← hlen, List.length_drop]
         omega
       exact FactorizationTree.binary_isRamsey eval
-        (ih _ h1_lt _ (take_ne_nil hlen_ge) rfl)
-        (ih _ h2_lt _ (drop_ne_nil hlen_ge) rfl)
+        (ih _ h_take_lt _ (take_ne_nil hlen_ge) rfl)
+        (ih _ h_drop_lt _ (drop_ne_nil hlen_ge) rfl)
 
 end BalancedTree
 
@@ -253,8 +253,8 @@ noncomputable def equivFin (n : ℕ) (_ : 0 < n) : TruncatedAdd n ≃ Fin n wher
 lemma card_eq (n : ℕ) (hn : 0 < n) : Fintype.card (TruncatedAdd n) = n :=
   (Fintype.card_congr (equivFin n hn)).trans (Fintype.card_fin n)
 
-/-- The `evalTrunc` function is a semigroup homomorphism from non-empty lists. -/
-lemma evalTrunc_hmul (hn : 0 < n) (u v : List (TruncatedAdd n))
+/-- The `evalTrunc` function is a semigroup homomorphism from non-empty lists under concatenation. -/
+lemma evalTrunc_append (hn : 0 < n) (u v : List (TruncatedAdd n))
     (hu : u ≠ []) (hv : v ≠ []) :
     evalTrunc hn (u ++ v) = evalTrunc hn u * evalTrunc hn v := by
   ext
@@ -267,7 +267,7 @@ end TruncatedAdd
 
 end TruncatedAddSemigroup
 
-section SimonComplexity
+section Complexity
 
 open GreensRelations RamseySplit TruncatedAdd
 
@@ -315,7 +315,7 @@ theorem isGreenJRel_iff_val_le (a b : TruncatedAdd n) : IsGreenJRel a b ↔ b.va
 theorem isGreenJ_iff_eq (a b : TruncatedAdd n) : IsGreenJ a b ↔ a = b := by
   rw [IsGreenJ, isGreenJRel_iff_val_le, isGreenJRel_iff_val_le]
   constructor
-  · rintro ⟨h1, h2⟩
+  · rintro ⟨h_le_left, h_le_right⟩
     exact TruncatedAdd.ext (by omega)
   · rintro rfl
     exact ⟨le_rfl, le_rfl⟩
@@ -359,7 +359,7 @@ theorem nD_truncatedAdd (x : TruncatedAdd n) : nD (IsGreenD.eqvClass x) = 1 := b
   omega
 
 open Classical in
-/-- The Simon complexity of each element `x` in `TruncatedAdd n` is exactly its value `x.val`. -/
+/-- The complexity bound `nSElement` of each element `x` in `TruncatedAdd n` is exactly its value `x.val`. -/
 theorem nSElement_truncatedAdd (x : TruncatedAdd n) : nSElement x = x.val := by
   induction hval : x.val using Nat.strong_induction_on generalizing x with
   | h k ih =>
@@ -384,15 +384,15 @@ theorem nSElement_truncatedAdd (x : TruncatedAdd n) : nSElement x = x.val := by
       have h_pred_le : k - 1 ≤ n := by
         have := x.le
         omega
-      let y₀ : TruncatedAdd n := ⟨k - 1, h_pred_pos, h_pred_le⟩
-      have hy₀_lt : GreenJClass.mk x < GreenJClass.mk y₀ := by
+      let y_pred : TruncatedAdd n := ⟨k - 1, h_pred_pos, h_pred_le⟩
+      have hy_pred_lt : GreenJClass.mk x < GreenJClass.mk y_pred := by
         rw [greenJClass_lt_iff, hval]
-        dsimp [y₀]
+        dsimp [y_pred]
         omega
-      have hy₀_mem : y₀ ∈ strictlyAbove :=
-        Finset.mem_filter.mpr ⟨Finset.mem_univ _, hy₀_lt⟩
-      have hy₀_val : nSElement y₀ = k - 1 := by
-        apply ih (k - 1) (by omega) y₀ rfl
+      have hy_pred_mem : y_pred ∈ strictlyAbove :=
+        Finset.mem_filter.mpr ⟨Finset.mem_univ _, hy_pred_lt⟩
+      have hy_pred_val : nSElement y_pred = k - 1 := by
+        apply ih (k - 1) (by omega) y_pred rfl
       have h_le : strictlyAbove.attach.sup (fun y ↦ nSElement y.1) ≤ k - 1 := by
         apply Finset.sup_le
         rintro ⟨y, hy_mem⟩ -
@@ -403,7 +403,7 @@ theorem nSElement_truncatedAdd (x : TruncatedAdd n) : nSElement x = x.val := by
         have hy_val := ih y.val (by omega) y rfl
         omega
       have h_ge : k - 1 ≤ strictlyAbove.attach.sup (fun y ↦ nSElement y.1) := by
-        have h_in : ⟨y₀, hy₀_mem⟩ ∈ strictlyAbove.attach := Finset.mem_attach _ _
+        have h_in : ⟨y_pred, hy_pred_mem⟩ ∈ strictlyAbove.attach := Finset.mem_attach _ _
         have h_le_sup := Finset.le_sup (f := fun y ↦ nSElement y.1) h_in
         dsimp only at h_le_sup
         omega
@@ -413,8 +413,8 @@ theorem nSElement_truncatedAdd (x : TruncatedAdd n) : nSElement x = x.val := by
       omega
 
 open Classical in
-/-- For the truncated addition semigroup `TruncatedAdd n`, the Simon complexity is
-exactly `n = |TruncatedAdd n|` (Colcombet line 361, Section 3.4). -/
+/-- For the truncated addition semigroup `TruncatedAdd n`, the complexity bound `nS` is
+exactly `n = |TruncatedAdd n|`. -/
 theorem nS_truncatedAdd (n : ℕ) (hn : 0 < n) : nS (TruncatedAdd n) = n := by
   have instNonempty : Nonempty (TruncatedAdd n) := ⟨top hn⟩
   apply le_antisymm
@@ -436,17 +436,16 @@ theorem nS_truncatedAdd (n : ℕ) (hn : 0 < n) : nS (TruncatedAdd n) = n := by
       exact ⟨nSElement (top hn), Finset.mem_image_of_mem _ (Finset.mem_univ _)⟩
 
 open Classical in
-/-- The Simon complexity equals the cardinality of the semigroup: `N(S_n) = |S_n| = n`. -/
+/-- The complexity bound `nS` equals the cardinality of the semigroup: `nS (TruncatedAdd n) = |TruncatedAdd n| = n`. -/
 theorem nS_eq_card_truncatedAdd (n : ℕ) (hn : 0 < n) :
     nS (TruncatedAdd n) = Fintype.card (TruncatedAdd n) := by
   rw [nS_truncatedAdd n hn, card_eq n hn]
 
-end SimonComplexity
+end Complexity
 
 section RamseyTreeConstruction
 
 open TruncatedAdd
-
 
 /-- The yield of a list of trees equals the flattened list of yields. -/
 lemma listValue_eq_flatten {A : Type*} :
@@ -466,7 +465,7 @@ lemma flatten_map_range_take_drop {A : Type*} (u : List A) (n : ℕ) :
 
 /-- Every non-empty word in `TruncatedAdd n` admits a
 Ramsey tree of height at most `log2Ceil n + 2`. -/
-theorem truncated_addition_tree_height (n : ℕ) (hn : 0 < n)
+theorem truncatedAdd_tree_height (n : ℕ) (hn : 0 < n)
     (u : List (TruncatedAdd n)) (hu : u ≠ []) :
     ∃ t : FactorizationTree (TruncatedAdd n),
       t.value = u ∧
@@ -478,7 +477,7 @@ theorem truncated_addition_tree_height (n : ℕ) (hn : 0 < n)
   · have h_h := (balancedTree_height_le d u hu).trans (log2Ceil_monotone hle)
     exact ⟨balancedTree d u, balancedTree_val d u hu, balancedTree_isRamsey eval d u hu, by omega⟩
   · push Not at hle
-    by_cases h2n : u.length < 2 * n
+    by_cases h_short : u.length < 2 * n
     · have htake_ne : u.take n ≠ [] := fun h ↦ by
         have := congrArg List.length h
         simp only [List.length_take, List.length_nil] at this
@@ -487,9 +486,9 @@ theorem truncated_addition_tree_height (n : ℕ) (hn : 0 < n)
         have := congrArg List.length h
         simp only [List.length_drop, List.length_nil] at this
         omega
-      let t1 := balancedTree d (u.take n)
-      let t2 := balancedTree d (u.drop n)
-      let t := FactorizationTree.binary t1 t2
+      let treeTake := balancedTree d (u.take n)
+      let treeDrop := balancedTree d (u.drop n)
+      let t := FactorizationTree.binary treeTake treeDrop
       have ht_val : t.value = u := by
         rw [value_binary, balancedTree_val d (u.take n) htake_ne,
             balancedTree_val d (u.drop n) hdrop_ne, List.take_append_drop]
@@ -498,19 +497,19 @@ theorem truncated_addition_tree_height (n : ℕ) (hn : 0 < n)
           (balancedTree_isRamsey eval d _ htake_ne)
           (balancedTree_isRamsey eval d _ hdrop_ne)
       have ht_height : t.height ≤ log2Ceil n + 2 := by
-        have ht1 := balancedTree_height_le d (u.take n) htake_ne
-        have ht2 := balancedTree_height_le d (u.drop n) hdrop_ne
-        rw [List.length_take] at ht1
-        rw [List.length_drop] at ht2
-        have ht1' := ht1.trans (log2Ceil_monotone (min_le_left _ _))
-        have ht2' := ht2.trans (log2Ceil_monotone (show u.length - n ≤ n by omega))
-        have h_max : max t1.height t2.height ≤ log2Ceil n := max_le ht1' ht2'
+        have h_take_ht := balancedTree_height_le d (u.take n) htake_ne
+        have h_drop_ht := balancedTree_height_le d (u.drop n) hdrop_ne
+        rw [List.length_take] at h_take_ht
+        rw [List.length_drop] at h_drop_ht
+        have h_take_ht' := h_take_ht.trans (log2Ceil_monotone (min_le_left _ _))
+        have h_drop_ht' := h_drop_ht.trans (log2Ceil_monotone (show u.length - n ≤ n by omega))
+        have h_max : max treeTake.height treeDrop.height ≤ log2Ceil n := max_le h_take_ht' h_drop_ht'
         rw [height_binary]
         omega
       exact ⟨t, ht_val, ht_ramsey, ht_height⟩
-    · push Not at h2n
+    · push Not at h_short
       let q := u.length / n
-      have hq2 : 2 ≤ q := Nat.le_div_iff_mul_le hn |>.mpr (by omega)
+      have hq_ge : 2 ≤ q := Nat.le_div_iff_mul_le hn |>.mpr (by omega)
       have h_block_len : ∀ i < q, ((u.drop (i * n)).take n).length = n := by
         intro i hi
         rw [List.length_take, List.length_drop]
@@ -544,7 +543,7 @@ theorem truncated_addition_tree_height (n : ℕ) (hn : 0 < n)
         rwa [h_block_len i (List.mem_range.mp hi)] at ht_h
       have h_idem_ramsey : (FactorizationTree.idempotent trees).IsRamsey eval :=
         (isRamsey_idempotent eval trees).mpr
-          ⟨h_trees_len.symm ▸ hq2, h_trees_ramsey, top hn, top_mul_self hn, h_trees_eval⟩
+          ⟨h_trees_len.symm ▸ hq_ge, h_trees_ramsey, top hn, top_mul_self hn, h_trees_eval⟩
       have h_trees_val : listValue trees = u.take (q * n) := by
         rw [listValue_eq_flatten]
         have h_map_val : trees.map FactorizationTree.value =
