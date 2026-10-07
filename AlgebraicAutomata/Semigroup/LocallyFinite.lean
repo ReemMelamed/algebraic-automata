@@ -89,24 +89,17 @@ mutual
       listProdNE t.value ht_ne ∈ closureSeq ϕ X t.height := by
     cases t with
     | leaf a =>
-      have h_val : (FactorizationTree.leaf a).value = [a] := FactorizationTree.value_leaf a
-      have h_ht : (FactorizationTree.leaf a).height = 0 := FactorizationTree.height_leaf a
-      rw [h_ht]
-      have ha_mem : a ∈ (FactorizationTree.leaf a).value := by
-        exact h_val.symm ▸ List.mem_singleton_self a
-      have ha_X : a ∈ X := hX a ha_mem
       have h_prod : listProdNE (FactorizationTree.leaf a).value ht_ne = a := by
-        rw [listProdNE_eq (FactorizationTree.leaf a).value [a] ht_ne (by simp) h_val]
+        rw [listProdNE_eq _ [a] _ (by simp) (FactorizationTree.value_leaf a)]
         rfl
-      exact h_prod.symm ▸ ha_X
+      have ha_X : a ∈ X := hX a (by grind [FactorizationTree.value_leaf])
+      grind [FactorizationTree.height_leaf, closureSeq]
     | binary l r =>
       rw [FactorizationTree.isRamsey_binary] at ht
       obtain ⟨ht_l, ht_r⟩ := ht
       have hl_ne := FactorizationTree.tree_value_ne_nil l ht_l
       have hr_ne := FactorizationTree.tree_value_ne_nil r ht_r
-      have hX_l : ∀ x ∈ l.value, x ∈ X := fun x hx ↦ by
-        grind [FactorizationTree.value_binary]
-      have hX_r : ∀ x ∈ r.value, x ∈ X := fun x hx ↦ by
+      obtain ⟨hX_l, hX_r⟩ : (∀ x ∈ l.value, x ∈ X) ∧ (∀ x ∈ r.value, x ∈ X) := by
         grind [FactorizationTree.value_binary]
       have ih_l := closureSeq_mono ϕ X (le_max_left l.height r.height)
         (tree_prod_in_closureSeq ϕ X eval h_eval l ht_l hX_l hl_ne)
@@ -412,16 +405,8 @@ lemma baseSet_mem_restrictionFamily [Finite T] (ϕ : S →ₙ* T) (X : Set S) (P
   · intro c
     have h_slice : {x ∈ X | ϕ x = a} ∩ ϕ ⁻¹' {c} =
         if c = a then {x ∈ X | ϕ x = a} else ∅ := by
-      split_ifs with hc
-      · subst hc
-        ext x
-        simp (config := {contextual := true})
-      · ext x
-        simp only [mem_inter_iff, mem_ofPred_eq, mem_preimage, mem_singleton_iff,
-          mem_empty_iff_false, iff_false, not_and]
-        rintro ⟨-, hxa⟩ hxc
-        exact hc (hxc.symm.trans hxa)
-    rw [h_slice]
+      ext x
+      grind
     grind
 
 open Classical in

@@ -121,8 +121,7 @@ lemma exists_mem_ge_of_evalMax_ge (n : ℕ) (hn : 0 < n) {k : MaxSemigroup n}
     ∃ x ∈ u, k ≤ x := by
   induction u with
   | nil => exact (not_le_of_gt hk h).elim
-  | cons y ys ih =>
-    grind [evalMax_cons]
+  | cons y ys ih => grind [evalMax_cons]
 
 lemma isRamsey_of_mem_listIsRamsey {A S : Type*} [Semigroup S] {eval : List A → S}
     {cs : List (FactorizationTree A)} (hcs : listIsRamsey eval cs) {c : FactorizationTree A}
@@ -352,9 +351,7 @@ lemma mem_listHeight_le {α : Type*} {c : FactorizationTree α} {cs : List (Fact
 lemma height_ge_child_of_idempotent {α : Type*} {cs : List (FactorizationTree α)}
     {c : FactorizationTree α} (hc : c ∈ cs) :
     c.height + 1 ≤ (FactorizationTree.idempotent cs).height := by
-  have := mem_listHeight_le hc
-  rw [height_idempotent]
-  omega
+  grind [height_idempotent, mem_listHeight_le hc]
 
 /-- The height of a binary tree is strictly greater than the height of its left subtree. -/
 lemma height_ge_child_of_binary_left {α : Type*} (l r : FactorizationTree α) :
@@ -402,9 +399,7 @@ lemma w_mem_lt (n : ℕ) (hn : 0 < n) (k : ℕ) (hk : k + 1 < n)
 
 /-- The 9-fold repetition of a non-empty list has length at least 9. -/
 lemma repeatNine_length_ge {α : Type*} (l : List α) (hl : l ≠ []) : 9 ≤ (repeatNine l).length := by
-  have := List.length_pos_iff.mpr hl
-  simp [repeatNine, repeatThree]
-  omega
+  grind [List.length_pos_iff, repeatNine, repeatThree]
 
 /-- The 27-fold repetition of a non-empty list has length at least 27. -/
 lemma repeatTwentySeven_length_ge {α : Type*} (l : List α) (hl : l ≠ []) :
@@ -423,11 +418,7 @@ lemma exists_child_w_of_repeatNine_w {n : ℕ} (hn : 0 < n) (k : ℕ) (hk : k + 
   have hw_ne := w_ne_nil n hn k
   cases C with
   | leaf a =>
-    have h_val_len := h_inf.length_le
-    rw [value_leaf] at h_val_len
-    have := repeatNine_length_ge (w n hn k) hw_ne
-    simp only [List.length_singleton] at h_val_len
-    omega
+    grind [value_leaf, repeatNine_length_ge (w n hn k) hw_ne]
   | binary l r =>
     rw [isRamsey_binary] at hC_ramsey
     obtain ⟨hC_l, hC_r⟩ := hC_ramsey
@@ -553,18 +544,10 @@ lemma height_ge_of_w_infix {n : ℕ} (hn : 0 < n) (k : ℕ) (hk : k < n)
     2 * k + 1 ≤ t.height := by
   induction k generalizing t with
   | zero =>
-    have h_not_leaf : ∀ a, t ≠ FactorizationTree.leaf a := by
-      rintro a rfl
-      have h_w_le := h.length_le
-      have h_rep_ge := repeatTwentySeven_length_ge [botEl n hn] (by simp)
-      dsimp [w] at h_w_le h_rep_ge
-      rw [value_leaf] at h_w_le
-      simp only [List.length_singleton] at h_w_le
-      omega
-    have h_ht_pos := height_pos_of_not_leaf t h_not_leaf
-    omega
-  | succ k' ih =>
-    grind [grandchild_has_w_of_w_succ]
+    have h_not_leaf (a : MaxSemigroup n) : t ≠ FactorizationTree.leaf a := by
+      grind [h.length_le, repeatTwentySeven_length_ge [botEl n hn] (by simp), w, value_leaf]
+    grind [height_pos_of_not_leaf t h_not_leaf]
+  | succ k' ih => grind [grandchild_has_w_of_w_succ]
 
 /-- Tightness: for each `n ≥ 2`, there exists an aperiodic finite semigroup `S`
 of size `n` and a word where **all** Ramsey trees have height at least `2 * n - 1`.
@@ -580,12 +563,10 @@ theorem aperiodic_bound_tight (n : ℕ) (hn : 2 ≤ n) :
           t.IsRamsey eval →
           2 * n - 1 ≤ t.height := by
   have hn' : 0 < n := by omega
-  have h_bound : ∀ (t : FactorizationTree (MaxSemigroup n)),
-      t.value = w n hn' (n - 1) → IsRamsey (evalMax n hn') t → 2 * n - 1 ≤ t.height := by
-    intro t ht_val ht_ramsey
-    have h_ht_ge := height_ge_of_w_infix hn' (n - 1) (by omega) t ht_ramsey
-      (ht_val ▸ List.infix_refl _)
-    omega
+  have h_bound (t : FactorizationTree (MaxSemigroup n))
+      (ht_val : t.value = w n hn' (n - 1)) (ht_ramsey : IsRamsey (evalMax n hn') t) :
+      2 * n - 1 ≤ t.height := by
+    grind [height_ge_of_w_infix hn' (n - 1) (by omega) t ht_ramsey (ht_val ▸ List.infix_refl _)]
   exact ⟨MaxSemigroup n, inferInstance, inferInstance, maxSemigroup_isAperiodic n,
     Fintype.card_fin n, evalMax n hn', fun u v _ _ => evalMax_append n hn' u v,
     w n hn' (n - 1), w_ne_nil n hn' (n - 1), h_bound⟩
