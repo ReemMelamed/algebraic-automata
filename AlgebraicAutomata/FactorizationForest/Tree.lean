@@ -302,7 +302,7 @@ lemma split_to_tree_inner {n : ℕ} (m : ℕ) (_ : m < n)
         grind
       · obtain ⟨t_outer, ht_outer_val, ht_outer_ramsey, ht_outer_height⟩ :=
           ih i j hij (by grind)
-        refine ⟨[t_outer], by simp, by simp [FactorizationTree.listValue, ht_outer_val],
+        exact ⟨[t_outer], by simp, by simp [FactorizationTree.listValue, ht_outer_val],
           ⟨ht_outer_ramsey, trivial⟩, List.forall_mem_singleton.2 (ht_outer_val.symm ▸ rfl),
           List.forall_mem_singleton.2 ht_outer_height, fun hc ↦ (h_cut hc).elim⟩
   intro hij hsi hsj h_between
@@ -335,7 +335,7 @@ lemma split_to_tree_outer {n : ℕ}
       rw [hj_eq]
       have h_diff : (i : ℕ) + 1 - (i : ℕ) = 1 := by omega
       exact h_diff.symm ▸ (list_drop_take_one u i.val hi_lt).symm
-    refine ⟨t, ht_val, FactorizationTree.leaf_isRamsey eval _, by simp [t]⟩
+    exact ⟨t, ht_val, FactorizationTree.leaf_isRamsey eval _, by simp [t]⟩
   | succ m' ih_m' =>
     intro hm i j hij h_less
     let S_cuts :=
@@ -597,10 +597,7 @@ theorem factorization_forest_classical_bound {A S : Type*} [Semigroup S] [Fintyp
       t.value = u ∧
       t.IsRamsey eval ∧
       t.height ≤ 3 * Fintype.card S - 1 := by
-  obtain ⟨t, ht_val, ht_ramsey, ht_ht⟩ := factorization_forest_theorem eval hmul u hu
-  use t, ht_val, ht_ramsey
-  have h_le := nS_le_card (S := S)
-  omega
+  grind [nS_le_card, factorization_forest_theorem eval hmul u hu]
 
 theorem factorization_forest_classical_bound_mulHom {S T : Type*} [Semigroup S] [Semigroup T]
     [Fintype T] [Nonempty T] (ϕ : S →ₙ* T) (u : List S) (hu : u ≠ []) :

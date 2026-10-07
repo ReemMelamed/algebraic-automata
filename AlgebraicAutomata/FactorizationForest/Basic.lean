@@ -95,7 +95,7 @@ lemma isRamsey_idem_step {L : MultiplicativeLabeling S α} {s : Split α h} (h_r
   have h_idem := h_ramsey.1 x y z hxy hyz h_rel_xy h_rel_yz
   have h_tot := L.prop x y z hxy hyz
   have h_xz : L.σ x z = L.σ x y := by rw [← h_tot, ← h_eq, h_idem]
-  refine ⟨h_idem, h_eq, h_xz, by rw [h_xz, h_idem], by rw [h_xz, h_eq]⟩
+  exact ⟨h_idem, h_eq, h_xz, by rw [h_xz, h_idem], by rw [h_xz, h_eq]⟩
 
 end SplitDefinitions
 

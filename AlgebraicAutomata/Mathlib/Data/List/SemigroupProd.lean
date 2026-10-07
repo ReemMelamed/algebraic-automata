@@ -65,12 +65,12 @@ lemma mem_closure_iff_exists_list (X : Set S) (s : S) :
   · intro hs
     induction hs using Subsemigroup.closure_induction with
     | mem x hx =>
-      refine ⟨[x], by simp, by simp [hx], rfl⟩
+      exact ⟨[x], by simp, by simp [hx], rfl⟩
     | mul x y hx hy ihx ihy =>
       rcases ihx with ⟨ux, hux, hX_x, rfl⟩
       rcases ihy with ⟨uy, huy, hX_y, rfl⟩
-      refine ⟨ux ++ uy, by simp [hux, huy], List.forall_mem_append.mpr ⟨hX_x, hX_y⟩, ?_⟩
-      exact listProdNE_concat ux uy hux huy
+      exact ⟨ux ++ uy, by simp [hux, huy], List.forall_mem_append.mpr ⟨hX_x, hX_y⟩,
+        listProdNE_concat ux uy hux huy⟩
   · rintro ⟨u, hu, hX, rfl⟩
     induction u with
     | nil => contradiction

@@ -426,61 +426,53 @@ theorem truncatedAdd_tree_height (n : ℕ) (hn : 0 < n)
   let d : TruncatedAdd n := top hn
   let eval := evalTrunc hn
   by_cases hle : u.length ≤ n
-  · refine ⟨balancedTree d u, by
-      grind [balancedTree_val, balancedTree_isRamsey,
-        (balancedTree_height_le d u hu).trans (log2Ceil_monotone hle)]⟩
-  · push Not at hle
-    by_cases h_short : u.length < 2 * n
-    · have htake_ne : u.take n ≠ [] := by grind [List.length_take, List.length_nil]
-      have hdrop_ne : u.drop n ≠ [] := by grind [List.length_drop, List.length_nil]
-      let t := FactorizationTree.binary (balancedTree d (u.take n)) (balancedTree d (u.drop n))
-      have ht_take : (balancedTree d (u.take n)).height ≤ log2Ceil n :=
-        (balancedTree_height_le d _ htake_ne).trans (log2Ceil_monotone (by grind))
-      have ht_drop : (balancedTree d (u.drop n)).height ≤ log2Ceil n :=
-        (balancedTree_height_le d _ hdrop_ne).trans (log2Ceil_monotone (by grind))
-      use t
+  · use balancedTree d u
+    grind [balancedTree_val, balancedTree_isRamsey,
+      (balancedTree_height_le d u hu).trans (log2Ceil_monotone hle)]
+  · by_cases h_short : u.length < 2 * n
+    · obtain ⟨htake_ne, hdrop_ne⟩ : u.take n ≠ [] ∧ u.drop n ≠ [] := by
+        grind [List.length_take, List.length_drop, List.length_nil]
+      have ht_h : (balancedTree d (u.take n)).height ≤ log2Ceil n ∧
+          (balancedTree d (u.drop n)).height ≤ log2Ceil n :=
+        ⟨(balancedTree_height_le d _ htake_ne).trans (log2Ceil_monotone (by grind)),
+         (balancedTree_height_le d _ hdrop_ne).trans (log2Ceil_monotone (by grind))⟩
+      use FactorizationTree.binary (balancedTree d (u.take n)) (balancedTree d (u.drop n))
       grind [value_binary, balancedTree_val, List.take_append_drop,
         FactorizationTree.binary_isRamsey, balancedTree_isRamsey, height_binary]
-    · push Not at h_short
-      let q := u.length / n
-      have hq_ge : 2 ≤ q := Nat.le_div_iff_mul_le hn |>.mpr (by omega)
-      have h_block_len : ∀ i < q, ((u.drop (i * n)).take n).length = n := by
-        intro i hi
+    · let q := u.length / n
+      have h_block_len : ∀ i < q, ((u.drop (i * n)).take n).length = n := fun i hi ↦ by
         rw [List.length_take, List.length_drop]
-        have h_in : i * n + n ≤ q * n := by
-          have h_mul := Nat.mul_le_mul_right n (Nat.succ_le_of_lt hi)
-          rw [Nat.succ_mul] at h_mul
-          exact h_mul
+        have h_in : i * n + n ≤ q * n :=
+          Nat.succ_mul i n ▸ Nat.mul_le_mul_right n (Nat.succ_le_of_lt hi)
         have hqn : q * n ≤ u.length := Nat.div_mul_le_self u.length n
         omega
       have h_block_ne : ∀ i < q, (u.drop (i * n)).take n ≠ [] := by
         grind [List.length_nil]
       let trees : List (FactorizationTree (TruncatedAdd n)) :=
         (List.range q).map (fun i ↦ balancedTree d ((u.drop (i * n)).take n))
-      have h_trees_len : trees.length = q := by
-        simp only [trees, List.length_map, List.length_range]
-      have h_trees_ramsey : listIsRamsey eval trees := by
-        grind [listIsRamsey_iff, balancedTree_isRamsey]
-      have h_trees_eval : ∀ t ∈ trees, eval (FactorizationTree.value t) = top hn := by
-        grind [balancedTree_val, evalTrunc_of_length_ge]
-      have h_trees_height : ∀ t ∈ trees, t.height ≤ log2Ceil n := by
-        grind [balancedTree_height_le]
+      have h_trees_ge : 2 ≤ trees.length := by
+        simpa [trees] using (Nat.le_div_iff_mul_le hn).mpr (by omega)
+      obtain ⟨h_trees_ramsey, h_trees_eval, h_trees_height⟩ :
+          listIsRamsey eval trees ∧
+          (∀ t ∈ trees, eval t.value = top hn) ∧
+          (∀ t ∈ trees, t.height ≤ log2Ceil n) := by
+        grind [listIsRamsey_iff, balancedTree_isRamsey, balancedTree_val,
+          evalTrunc_of_length_ge, balancedTree_height_le]
       have h_idem_ramsey : (FactorizationTree.idempotent trees).IsRamsey eval :=
         (isRamsey_idempotent eval trees).mpr
-          ⟨h_trees_len.symm ▸ hq_ge, h_trees_ramsey, top hn, top_mul_self hn, h_trees_eval⟩
-      have h_trees_val : listValue trees = u.take (q * n) := by
+          ⟨h_trees_ge, h_trees_ramsey, top hn, top_mul_self hn, h_trees_eval⟩
+      obtain ⟨h_trees_val, h_idem_height⟩ :
+          listValue trees = u.take (q * n) ∧
+          (FactorizationTree.idempotent trees).height ≤ 1 + log2Ceil n := by
         grind [listValue_eq_flatten, List.map_congr_left, balancedTree_val,
-          flatten_map_range_take_drop]
-      have h_idem_height : (FactorizationTree.idempotent trees).height ≤ 1 + log2Ceil n := by
-        grind [height_idempotent, listHeight_le trees h_trees_height]
+          flatten_map_range_take_drop, height_idempotent, listHeight_le trees h_trees_height]
       by_cases hrem : u.drop (q * n) = []
       · grind [value_idempotent, List.take_append_drop]
       · let trem := balancedTree d (u.drop (q * n))
-        let t := FactorizationTree.binary (FactorizationTree.idempotent trees) trem
         have htrem_h : trem.height ≤ log2Ceil n :=
           (balancedTree_height_le d _ hrem).trans (log2Ceil_monotone (by
             grind [List.length_drop, Nat.mod_lt u.length hn, Nat.mod_add_div]))
-        use t
+        use FactorizationTree.binary (FactorizationTree.idempotent trees) trem
         grind [value_binary, value_idempotent, balancedTree_val, List.take_append_drop,
           FactorizationTree.binary_isRamsey, balancedTree_isRamsey, height_binary]
 

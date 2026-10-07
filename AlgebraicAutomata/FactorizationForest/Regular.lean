@@ -182,7 +182,7 @@ lemma sigma_props (ctx : SplitContext S α) (z mz : α) (h_mz : mz < z)
       rOf_well_defined ctx mz _ z (choose_spec (not_isMax_iff.mp hn_max)) h_mz]
   have hH : IsGreenH (ctx.σ.σ mz z) (eId ctx z) :=
     ⟨(hl_eq ▸ (eId_mem ctx z).1).symm, (hr_eq ▸ (hm_H ▸ eId_mem ctx z).2).symm⟩
-  have ⟨h1, h2⟩ := MulSeq.mul_eq_self_of_isGreenH_idempotent hH (eId_idem ctx z)
+  obtain ⟨h1, h2⟩ := MulSeq.mul_eq_self_of_isGreenH_idempotent hH (eId_idem ctx z)
   exact ⟨by rw [mul_assoc, h1, h2], hH⟩
 
 open Classical in
