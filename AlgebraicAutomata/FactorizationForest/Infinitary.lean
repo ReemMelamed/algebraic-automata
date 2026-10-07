@@ -75,10 +75,8 @@ lemma exists_coinciding_bound (s : ℕ → Fin (nS S))
 /-- If a split `s_fin` on `Fin (N + 1)` agrees with a split `s` on `ℕ` up to `max x y`,
 then the split relation `SplitRelation s x y` is inherited by `s_fin`. -/
 lemma splitRelation_of_agree {n N : ℕ} (s : Split ℕ n) (s_fin : Split (Fin (N + 1)) n)
-    (x y : Fin (N + 1))
-    (h_agree : ∀ k ≤ max x y, s_fin k = s k.val)
-    (hsr : SplitRelation s x.val y.val) :
-    SplitRelation s_fin x y := by
+    (x y : Fin (N + 1)) (h_agree : ∀ k ≤ max x y, s_fin k = s k.val)
+    (hsr : SplitRelation s x.val y.val) : SplitRelation s_fin x y := by
   grind
 
 lemma splitRelation_finSplit {s : ℕ → Fin (nS S)} {M N : ℕ} (hMN : M ≤ N)

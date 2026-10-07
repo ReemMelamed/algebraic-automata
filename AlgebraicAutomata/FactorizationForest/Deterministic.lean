@@ -113,8 +113,7 @@ with the new input `b`. -/
 def candidateConfig (c : List S) (b : S) (k : ℕ) : List S :=
   if hk : k < c.length then
     have h_drop_ne : c.drop k ≠ [] := by
-      simp [List.drop_eq_nil_iff]
-      omega
+      grind [List.drop_eq_nil_iff]
     c.take k ++ [listProdNE (c.drop k) h_drop_ne * b]
   else
     c ++ [b]
@@ -122,13 +121,14 @@ def candidateConfig (c : List S) (b : S) (k : ℕ) : List S :=
 /-- The candidate configuration for `k = 0` is a singleton, which is always valid. -/
 theorem candidateConfig_zero_isValid : ∀ (c : List S), c ≠ [] → ∀ b : S,
     IsValidConfig (candidateConfig c b 0)
-  | [], hc, _ => False.elim (hc rfl)
+  | [], hc, _ => nomatch (hc rfl)
   | _ :: _, _, _ => isValidConfig_singleton _
 
 /-- The type of valid configurations in `S`. -/
 def ValidConfig (S : Type*) [Semigroup S] :=
   { c : List S // IsValidConfig c }
 
+/-- An inhabited semigroup admits a default valid configuration. -/
 instance [Inhabited S] : Inhabited (ValidConfig S) :=
   ⟨⟨[default], isValidConfig_singleton default⟩⟩
 
@@ -141,9 +141,9 @@ theorem ConfigJChain.nodup_map (c : List S) (h : ConfigJChain c) :
   have hij' : GreenJClass.mk (c.get ⟨i, hi⟩) = GreenJClass.mk (c.get ⟨j, hj⟩) := by
     simpa using hij
   rcases lt_trichotomy i j with hlt | rfl | hgt
-  · exact False.elim (lt_irrefl _ (hij' ▸ h i j hi hj hlt))
+  · exact nomatch (lt_irrefl _ (hij' ▸ h i j hi hj hlt))
   · rfl
-  · exact False.elim (lt_irrefl _ (hij'.symm ▸ h j i hj hi hgt))
+  · exact nomatch (lt_irrefl _ (hij'.symm ▸ h j i hj hi hgt))
 
 /-- In a finite semigroup, the length of any valid configuration is bounded by the
 number of Green's `J`-classes. -/
@@ -345,15 +345,18 @@ noncomputable def deterministicSplit {h : ℕ} (h₀ : S → Fin h)
       exact i.isLt⟩
     h₀ state.last
 
+/-- Running the transducer on the empty word produces a singleton list containing the initial state. -/
 @[simp]
 lemma runAutomaton_nil (q₀ : ValidConfig S) :
     runAutomaton q₀ [] = [q₀] := rfl
 
+/-- Run of the transducer on a word prepended with a single element. -/
 @[simp]
 lemma runAutomaton_cons (q₀ : ValidConfig S) (a : S) (u : List S) :
     runAutomaton q₀ (a :: u) = q₀ :: runAutomaton (stepConfig q₀ a) u := by
   simp [runAutomaton]
 
+/-- The initial state of any run of the transducer is `q₀`. -/
 lemma runAutomaton_get_zero (q₀ : ValidConfig S) : ∀ (u : List S),
     (runAutomaton q₀ u).get ⟨0, by
       rw [length_runAutomaton]
@@ -361,14 +364,11 @@ lemma runAutomaton_get_zero (q₀ : ValidConfig S) : ∀ (u : List S),
   | [] => rfl
   | _ :: _ => by simp [runAutomaton]
 
+/-- Evaluation of `deterministicSplit` at position `i`. -/
 @[simp]
 lemma deterministicSplit_apply {h : ℕ} (h₀ : S → Fin h)
     (q₀ : ValidConfig S) (u : List S) (i : Fin (u.length + 1)) :
-    deterministicSplit h₀ q₀ u i =
-      h₀ ((runAutomaton q₀ u).get ⟨i.val, by
-        rw [length_runAutomaton]
-        exact i.isLt⟩).last :=
-  rfl
+    deterministicSplit h₀ q₀ u i = h₀ ((runAutomaton q₀ u).get ⟨i.val, by simp⟩).last := rfl
 
 end Transducer
 
@@ -449,9 +449,7 @@ theorem deterministicTransducer_forwardRamsey [Finite S] {h : ℕ} (h₀ : S →
 the transducer on the mapped word in `S`. -/
 noncomputable def deterministicSplit_map {A : Type*} {h : ℕ} (h₀ : S → Fin h)
     (q₀ : ValidConfig S) (φ : A → S) (u : List A) : Split (Fin (u.length + 1)) h :=
-  fun i ↦ deterministicSplit h₀ q₀ (u.map φ) ⟨i.val, by
-    rw [List.length_map]
-    exact i.isLt⟩
+  fun i ↦ deterministicSplit h₀ q₀ (u.map φ) ⟨i.val, by simp⟩
 
 /-- Generalization of the deterministic transducer construction to an arbitrary alphabet `A`
 and mapping `φ : A → S`:
@@ -461,10 +459,7 @@ theorem deterministicSplit_map_isForwardRamsey [Finite S] {A : Type*} {h : ℕ} 
     (q₀ : ValidConfig S) (φ : A → S) (u : List A)
     (L : MultiplicativeLabeling S (Fin ((u.map φ).length + 1)))
     (hL : ∀ (i j : Fin ((u.map φ).length + 1)) (hij : i < j),
-      have hne : ((u.map φ).drop i.val).take (j.val - i.val) ≠ [] := by
-        rw [← List.length_pos_iff]
-        simp only [List.length_take, List.length_drop]
-        omega
+      have hne : ((u.map φ).drop i.val).take (j.val - i.val) ≠ [] := by grind [List.length_take]
       L.σ i j = listProdNE (((u.map φ).drop i.val).take (j.val - i.val)) hne) :
     IsForwardRamsey L (deterministicSplit h₀ q₀ (u.map φ)) :=
   deterministicTransducer_forwardRamsey h₀ h_inj h_rev q₀ (u.map φ) L hL

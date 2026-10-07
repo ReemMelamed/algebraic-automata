@@ -903,7 +903,7 @@ lemma lcaHeightRaw_at_length {S : Type*} [Semigroup S] {eval : List A → S} (t 
     rw [isRamsey_binary] at ht
     have hr : l.value.length < (binary l r).value.length := by
       cases h : r.value
-      · exact False.elim (tree_value_ne_nil r ht.2 h)
+      · exact nomatch (tree_value_ne_nil r ht.2 h)
       · rw [value_binary, List.length_append, h, List.length_cons]
         omega
     rw [lcaHeightRaw_binary_right l r hr]

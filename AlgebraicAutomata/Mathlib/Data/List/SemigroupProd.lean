@@ -21,7 +21,7 @@ variable {S : Type*} [Semigroup S]
 -- TODO: Upstream to Mathlib.Data.List.SemigroupProd
 /-- Product of a non-empty list of elements in a semigroup `S`. -/
 def listProdNE : (u : List S) → u ≠ [] → S
-  | [], hu => False.elim (hu rfl)
+  | [], hu => nomatch (hu rfl)
   | a :: rest, _ => rest.foldl (· * ·) a
 
 -- TODO: Upstream to Mathlib.Data.List.SemigroupProd
