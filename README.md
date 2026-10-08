@@ -6,7 +6,7 @@
 [![Mathlib 4](https://img.shields.io/badge/powered_by-Mathlib4-purple.svg)](https://github.com/leanprover-community/mathlib4)
 [![License](https://img.shields.io/badge/License-Apache_2.0-green.svg)](LICENSE)
 
-A formalization of finite semigroup theory, Green's relations, and Simon's Factorization Forest Theorem (Colcombet 2008/2012) in Lean 4.
+A formalization of finite semigroup theory, Green's relations, and Simon's Factorization Forest Theorem in Lean 4.
 
 ## Overview
 
