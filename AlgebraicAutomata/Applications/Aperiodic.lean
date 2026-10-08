@@ -7,7 +7,7 @@ import Mathlib.Algebra.Group.Basic
 import Mathlib.Data.Fintype.Basic
 import Mathlib.Data.Finset.Basic
 import Mathlib.Data.List.Infix
-import AlgebraicAutomata.FactorizationForest.TruncatedAddition
+import AlgebraicAutomata.Applications.TruncatedAddition
 
 /-!
 # Aperiodic Semigroups and Height Bounds

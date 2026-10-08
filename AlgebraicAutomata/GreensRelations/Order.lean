@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Re'em Melamed-Katz
 -/
 import Mathlib.Data.Fintype.Quotient
-import AlgebraicAutomata.Semigroup.GreensRelations.Finite
+import AlgebraicAutomata.GreensRelations.Finite
 
 /-!
 # Green's Relations Partial Orders

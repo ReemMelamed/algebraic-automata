@@ -5,7 +5,7 @@ Authors: Re'em Melamed-Katz
 -/
 import Mathlib.Data.Fintype.Card
 import Mathlib.Data.Finset.Max
-import AlgebraicAutomata.Semigroup.GreensRelations.Order
+import AlgebraicAutomata.GreensRelations.Order
 
 /-!
 # Ramsey Splits — Basic Definitions

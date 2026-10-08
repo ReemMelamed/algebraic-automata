@@ -12,7 +12,7 @@ import Mathlib.Data.Fintype.Basic
 import Mathlib.Algebra.Group.Pointwise.Set.Finite
 import Mathlib.Order.CompleteLattice.Finset
 import AlgebraicAutomata.FactorizationForest.Tree
-import AlgebraicAutomata.Mathlib.Data.List.SemigroupProd
+import AlgebraicAutomata.ForMathlib.Data.List.SemigroupProd
 /-!
 # Locally Finite Semigroups and Brown's Lemma
 

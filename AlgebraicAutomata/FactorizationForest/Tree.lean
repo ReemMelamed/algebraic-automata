@@ -5,10 +5,9 @@ Authors: Re'em Melamed-Katz
 -/
 import Mathlib.Data.Fintype.Basic
 import Mathlib.Data.Finset.Max
-import AlgebraicAutomata.FactorizationForest.Basic
 import AlgebraicAutomata.FactorizationForest.Split
-import AlgebraicAutomata.Mathlib.Data.List.SemigroupProd
-import AlgebraicAutomata.Mathlib.Data.List.Slice
+import AlgebraicAutomata.ForMathlib.Data.List.SemigroupProd
+import AlgebraicAutomata.ForMathlib.Data.List.Slice
 
 /-!
 # Simon's Factorization Forest Theorem (Tree Version)

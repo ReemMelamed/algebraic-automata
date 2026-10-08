@@ -8,7 +8,7 @@ import Mathlib.Algebra.Group.Basic
 import Mathlib.Algebra.Group.Opposite
 import Mathlib.Data.Set.Basic
 import Mathlib.Basic.Finite.Defs
-import AlgebraicAutomata.Mathlib.Algebra.Group.Opposite
+import AlgebraicAutomata.ForMathlib.Algebra.Group.Opposite
 
 /-!
 # Green's Relations: Definitions and Basic Properties
