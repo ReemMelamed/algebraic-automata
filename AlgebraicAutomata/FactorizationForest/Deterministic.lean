@@ -113,7 +113,8 @@ with the new input `b`. -/
 def candidateConfig (c : List S) (b : S) (k : ℕ) : List S :=
   if hk : k < c.length then
     have h_drop_ne : c.drop k ≠ [] := by
-      grind [List.drop_eq_nil_iff]
+      simp [List.drop_eq_nil_iff]
+      omega
     c.take k ++ [listProdNE (c.drop k) h_drop_ne * b]
   else
     c ++ [b]
@@ -459,7 +460,9 @@ theorem deterministicSplit_map_isForwardRamsey [Finite S] {A : Type*} {h : ℕ} 
     (q₀ : ValidConfig S) (φ : A → S) (u : List A)
     (L : MultiplicativeLabeling S (Fin ((u.map φ).length + 1)))
     (hL : ∀ (i j : Fin ((u.map φ).length + 1)) (hij : i < j),
-      have hne : ((u.map φ).drop i.val).take (j.val - i.val) ≠ [] := by grind [List.length_take]
+      have hne : ((u.map φ).drop i.val).take (j.val - i.val) ≠ [] := by
+        simp
+        grind
       L.σ i j = listProdNE (((u.map φ).drop i.val).take (j.val - i.val)) hne) :
     IsForwardRamsey L (deterministicSplit h₀ q₀ (u.map φ)) :=
   deterministicTransducer_forwardRamsey h₀ h_inj h_rev q₀ (u.map φ) L hL

@@ -241,8 +241,7 @@ lemma fColoring_isGreenH (ctx : SplitContext S α) (z : α) :
   have hm_H : hOf ctx mz = hOf ctx z := (Finset.mem_filter.mp (Finset.min'_mem _ hm_nonempty)).2
   dsimp only [fColoring]
   split_ifs with h_mz
-  · have h_props := sigma_props ctx z mz h_mz hm_H
-    grind
+  · grind [sigma_props ctx z mz h_mz hm_H]
   · exact IsGreenH.refl (eId ctx z)
 
 section WithFintypeSNonemptyAlpha
@@ -325,7 +324,7 @@ lemma ramsey_regular_d_case
       simp only [IsNormalized, indexMap, Equiv.trans_apply, Equiv.swap_apply_left]
       symm
       rw [Finset.max'_eq_iff]
-      exact ⟨Finset.mem_univ _, fun _ _ ↦ by grind⟩,
+      exact ⟨Finset.mem_univ _, fun w _ ↦ Fin.le_iff_val_le_val.mpr (Nat.le_pred_of_lt w.isLt)⟩,
     fun x y z h_lt_xy _ h_rel_xy _ ↦ by simp [h_sig_eq_eId x y h_lt_xy h_rel_xy],
     fun x y u v hlt_xy hlt_uv hsr_xy hsr_uv hsr_xu ↦ by
       have he_eq := MulSeq.eq_of_isGreenH_of_idempotent

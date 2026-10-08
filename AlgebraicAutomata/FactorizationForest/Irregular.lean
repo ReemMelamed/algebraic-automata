@@ -88,11 +88,7 @@ lemma irregularSplits_props {α S : Type*}
     IsNormalized (irregularSplits a xs sY) ∧
     IsRamsey σ (irregularSplits a xs sY) := by
   have h_lt : ∀ {i j : Fin xs.length}, xs.get i < xs.get j → i.val < j.val := by
-    intro ⟨i, hi⟩ ⟨j, hj⟩ h
-    contrapose! h
-    rcases h.eq_or_lt with rfl | hlt
-    · exact le_rfl
-    · exact (h_xs_mono j i hj hi hlt).le
+    grind only [le_rfl]
   exact combineSplits_props a xs (nSElement a - 1) σ σ_Y
     (fun _ ↦ ⟨nSElement a - 1, Nat.sub_lt (nSElement_pos a) Nat.zero_lt_one⟩)
     sY hsY_ramsey h_σ_Y h_cov hsY_strict
@@ -113,10 +109,7 @@ lemma irregularSplits_props {α S : Type*}
       have h_ix_iy := h_lt hlt_xy
       have h_iu_iv := h_lt hlt_uv
       rw [Fin.ext (show ix.val = iu.val by omega), Fin.ext (show iy.val = iv.val by omega)])
-    (h_min_norm := by
-      cases xs
-      · cases h_min_head
-      · grind)
+    (h_min_norm := by cases xs with | nil => cases h_min_head | cons hd tl => grind)
     (h_max_val := h_max_val)
 
 /-- Constructs a normalized Ramsey split when the `D`-class of `a` is irregular. -/

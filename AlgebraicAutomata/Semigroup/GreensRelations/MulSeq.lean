@@ -77,8 +77,7 @@ lemma b_eq_right_left_seq (c b d : S) (h : b = c * b * d) (n : ℕ) :
   induction n with
   | zero => rfl
   | succ n ih =>
-    rw [h, ih]
-    grind [rightMulSeq_mul_pull, leftMulSeq, rightMulSeq, mul_assoc]
+    grind only [rightMulSeq_mul_pull, leftMulSeq, rightMulSeq]
 
 /-- Left multiplication sequence addition of indices. -/
 lemma leftMulSeq_add (c a : S) (n : ℕ) : ∀ (m : ℕ),
@@ -110,7 +109,7 @@ open MulOpposite in
 /-- If `b = c * b * d`, then `b` is `R`-related to `b * d`. -/
 lemma greenR_of_eq_mul_mul [Finite S] {b c d : S} (h : b = c * b * d) : IsGreenR b (b * d) := by
   rw [isGreenR_iff_isGreenL_op]
-  grind [op_mul, mul_assoc, isGreenR_iff_isGreenL_op, greenL_of_eq_mul_mul]
+  grind only [op_mul, mul_assoc, isGreenR_iff_isGreenL_op, greenL_of_eq_mul_mul]
 
 /-- Green's `L`-relation holds when a left multiplier is dropped from an
 already `L`-related element. -/
@@ -127,7 +126,7 @@ open MulOpposite in
 lemma isGreenR_of_eq_mul_mul_mul [Finite S] {b c u y : S} (h : b = c * b * (u * y)) :
     IsGreenR b (b * u) := by
   rw [isGreenR_iff_isGreenL_op]
-  grind [op_mul, mul_assoc, isGreenR_iff_isGreenL_op, isGreenL_of_eq_mul_mul_mul]
+  grind only [op_mul, mul_assoc, isGreenR_iff_isGreenL_op, isGreenL_of_eq_mul_mul_mul]
 
 /-- If `a` is a two-sided multiple of `b`, and `b` is a two-sided multiple of `a`,
   then `a` and `b` are Green's `D`-related. -/

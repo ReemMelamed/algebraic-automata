@@ -100,9 +100,7 @@ open Classical in
 omit [Fintype S] in
 lemma mem_isGreenD_eqvClass_iff_greenJClass_eq [Finite S] (x z : S) :
     z ∈ IsGreenD.eqvClass x ↔ GreenJClass.mk z = GreenJClass.mk x := by
-  change IsGreenD z x ↔ GreenJClass.mk z = GreenJClass.mk x
-  rw [GreenJClass.mk_eq_mk_iff]
-  exact ⟨isGreenJ_of_isGreenD, isGreenD_of_isGreenJ⟩
+  grind [GreenJClass.mk_eq_mk_iff, isGreenJ_of_isGreenD, isGreenD_of_isGreenJ]
 
 open Classical in
 lemma filter_isGreenD_eqvClass_eq (x : S) :
@@ -255,7 +253,7 @@ lemma buildXSeq_covers {S α : Type*} [Semigroup S] [Fintype S]
         x < (buildXSeq a σ x₀).get ⟨i + 1, hi_succ_lt⟩ := fun h_not_in ↦ by
   have h_x0_in : x₀ ∈ buildXSeq a σ x₀ := by
     rw [buildXSeq]
-    grind
+    split_ifs <;> exact .head _
   exact list_interval_covers x _ h_not_in
     ⟨x₀, h_x0_in, lt_of_le_of_ne h_x0_le_x (fun heq ↦ h_not_in (heq ▸ h_x0_in))⟩
 
@@ -273,7 +271,8 @@ lemma buildXSeq_head (a : S) {α : Type*} [LinearOrder α] [Fintype α]
         (fun y => w < y ∧ IsGreenD (σ.σ w y) a)).Nonempty then
       w :: buildXSeq a σ (Finset.min' _ h_cond)
     else [w] := by rw [buildXSeq]
-  grind
+  rw [h_eq] at h_xs
+  split_ifs at h_xs <;> subst h_xs <;> rfl
 
 /-- Sequence points are `≥ w`, strictly monotone, pairwise `D`-related, with no intermediate
 `D`-related points. -/
@@ -338,9 +337,7 @@ lemma buildXSeq_properties (a : S) {α : Type*} [LinearOrder α] [Fintype α]
         have hw_len_lt : 1 < (w :: buildXSeq a σ w').length := by
           simp only [List.length_cons, Nat.succ_lt_succ_iff]
           rw [buildXSeq]
-          split_ifs
-          · exact Nat.zero_lt_succ _
-          · exact Nat.zero_lt_succ _
+          split_ifs <;> exact Nat.zero_lt_succ _
         have h_y_lt_w' : y < w' :=
           buildXSeq_head a σ w' _ ▸ h_gt hw_len_lt
         exact lt_irrefl _ (lt_of_lt_of_le h_y_lt_w' hw'_le_y)
@@ -386,7 +383,7 @@ lemma buildXSeq_properties (a : S) {α : Type*} [LinearOrder α] [Fintype α]
       cases j with
       | zero => omega
       | succ j' => nomatch (Nat.not_lt_zero _ (Nat.succ_lt_succ_iff.mp hj_lt))
-    exact ⟨by grind, by grind, h_cov, h_mono⟩
+    exact ⟨by simp [h_xs], by simp [h_xs], h_cov, h_mono⟩
 termination_by (Finset.univ.filter (fun z => w < z)).card
 decreasing_by
   classical
@@ -437,19 +434,8 @@ lemma buildXSeq_same_interval_of_splitRelation {α : Type*} [LinearOrder α]
     have h_pq : p < q := lt_trans h_px (lt_of_le_of_lt h_xj h_lt_qj)
     have hb := hsr_pq.right _ ((min_eq_left (le_of_lt h_pq)).symm ▸ le_of_lt h_px)
       ((max_eq_right (le_of_lt h_pq)).symm ▸ le_trans h_xj (le_of_lt h_lt_qj))
-    have h_ge := rank_ge_diff_of_mem _ (xs.get_mem ⟨_, hi_succ_lt⟩)
-    have h_lt := rank_lt_diff_of_not_mem p hp
-    rw [min_eq_left (le_of_lt h_pq)] at hb
-    have h_le_val := Fin.le_iff_val_le_val.mp hb
-    omega
-  have hsr_qp : SplitRelation s q p := ⟨hsr_pq.1.symm, fun z hz1 hz2 ↦ by
-    rw [min_comm] at hz1 ⊢
-    rw [max_comm] at hz2
-    exact hsr_pq.2 z hz1 hz2⟩
-  rcases lt_trichotomy i j with h | rfl | h
-  · exact (h_not_lt i j p q hp p_oi q_oi hp_eq hq_eq hsr_pq h).elim
-  · rfl
-  · exact (h_not_lt j i q p hq q_oi p_oi hq_eq hp_eq hsr_qp h).elim
+    grind [rank_lt_diff_of_not_mem p hp, min_eq_left (le_of_lt h_pq)]
+  grind
 
 /-- Applies induction to each open interval of `xs` to obtain local Ramsey splits. -/
 lemma build_interval_splits_of_ih {S : Type*} [Semigroup S] [Fintype S]
@@ -858,18 +844,15 @@ lemma combineSplits_props {α S : Type*}
         rw [← hy_val_eq] at hsr_Y_yz
         have hlt_xy_Y : x_val < y_val := by
           change x_val.val < y_val.val
-          rw [hx_eq, hy_eq]
-          exact hlt_xy
+          exact hx_eq ▸ hy_eq ▸ hlt_xy
         have hlt_yz_Y : y_val < z_val := by
           change y_val.val < z_val.val
-          rw [hy_eq, hz_eq]
-          exact hlt_yz
+          exact hy_eq ▸ hz_eq ▸ hlt_yz
         have h_ramsey :=
           (@hsY_ramsey i ⟨x_val⟩).1 x_val y_val z_val
             hlt_xy_Y hlt_yz_Y hsr_Y_xy hsr_Y_yz
         rw [h_σ_Y i x_val y_val] at h_ramsey
-        rw [hx_eq, hy_eq] at h_ramsey
-        exact h_ramsey
+        exact hx_eq ▸ hy_eq ▸ h_ramsey
     · intro x y u v hlt_xy hlt_uv hsr_xy hsr_uv hsr_xu
       by_cases hx : x ∈ xs
       · have hu := mem_of_sr_mem x u hx hsr_xu

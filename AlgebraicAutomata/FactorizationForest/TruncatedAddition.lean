@@ -43,12 +43,12 @@ section BalancedTree
 /-- Taking half the elements of a list of length at least 2 is non-empty. -/
 lemma take_ne_nil {A : Type*} {l : List A} (hl : 2 ≤ l.length) :
     l.take (l.length / 2) ≠ [] := by
-  grind [List.length_nil]
+  grind [List.take_eq_nil_iff]
 
 /-- Dropping half the elements of a list of length at least 2 is non-empty. -/
 lemma drop_ne_nil {A : Type*} {l : List A} (hl : 2 ≤ l.length) :
     l.drop (l.length / 2) ≠ [] := by
-  grind [List.length_nil]
+  grind only [List.drop_eq_nil_iff]
 
 /-- Constructs a balanced binary factorization tree for a word `v`. -/
 def balancedTree {A : Type*} (d : A) (v : List A) : FactorizationTree A :=
@@ -116,7 +116,7 @@ lemma balancedTree_isRamsey {A S : Type*} [Semigroup S] (eval : List A → S) (d
     split_ifs with hle
     · cases v with
       | nil => contradiction
-      | cons a rest => cases rest <;> [exact FactorizationTree.leaf_isRamsey eval a; grind]
+      | cons a rest => grind [FactorizationTree.leaf_isRamsey]
     · have hlen_ge : 2 ≤ v.length := by omega
       have h_take_lt : (v.take (v.length / 2)).length < k := by
         simp only [← hlen, List.length_take]
@@ -189,8 +189,7 @@ def evalTrunc (hn : 0 < n) (u : List (TruncatedAdd n)) : TruncatedAdd n :=
     · exact hn
     · have := length_le_sum_val u
       have : 1 ≤ u.length := List.length_pos_iff.mpr h
-      omega,
-   by grind⟩
+      omega, by grind⟩
 
 /-- Value of `evalTrunc` on non-empty lists. -/
 lemma evalTrunc_val (hn : 0 < n) {u : List (TruncatedAdd n)} (hu : u ≠ []) :
@@ -202,7 +201,7 @@ lemma evalTrunc_of_length_ge (hn : 0 < n) (u : List (TruncatedAdd n))
     (hlen : n ≤ u.length) :
     evalTrunc hn u = top hn := by
   ext
-  grind [evalTrunc, top_val, length_le_sum_val]
+  grind [length_le_sum_val u, evalTrunc, top_val]
 
 /-- The unique idempotent in `TruncatedAdd n` is `top n`. -/
 lemma idempotent_eq_top {n : ℕ} (hn : 0 < n)
@@ -211,8 +210,7 @@ lemma idempotent_eq_top {n : ℕ} (hn : 0 < n)
 
 /-- Left-multiplication by `top n` returns `top n` for any element. -/
 lemma top_mul_any {n : ℕ} (hn : 0 < n) (x : TruncatedAdd n) : top hn * x = top hn := by
-  ext
-  simp [mul_val, top_val]
+  simp [TruncatedAdd.ext_iff, mul_val, top_val]
 
 /-- `TruncatedAdd n` has exactly `n` elements. -/
 noncomputable def equivFin (n : ℕ) (_ : 0 < n) : TruncatedAdd n ≃ Fin n where
@@ -286,7 +284,7 @@ theorem isGreenJRel_iff_val_le (a b : TruncatedAdd n) : IsGreenJRel a b ↔ b.va
 
 /-- Green's J-relation on `TruncatedAdd n` is equality: each element forms its own J-class. -/
 theorem isGreenJ_iff_eq (a b : TruncatedAdd n) : IsGreenJ a b ↔ a = b := by
-  grind [isGreenJRel_iff_val_le, TruncatedAdd.ext_iff]
+  grind only [isGreenJRel_iff_val_le, TruncatedAdd.ext_iff]
 
 /-- In `TruncatedAdd n`, Green's D-relation is equality. -/
 theorem isGreenD_iff_eq (a b : TruncatedAdd n) : IsGreenD a b ↔ a = b := by
@@ -308,8 +306,7 @@ theorem greenJClass_lt_iff (a b : TruncatedAdd n) :
     GreenJClass.mk a < GreenJClass.mk b ↔ b.val < a.val := by
   change (GreenJClass.mk a ≤ GreenJClass.mk b ∧
     ¬(GreenJClass.mk b ≤ GreenJClass.mk a)) ↔ b.val < a.val
-  grind [greenJClass_le_iff]
-
+  grind only [greenJClass_le_iff]
 
 open Classical in
 /-- Every D-class in `TruncatedAdd n` has complexity `nD = 1`. -/
@@ -341,8 +338,7 @@ theorem nSElement_truncatedAdd (x : TruncatedAdd n) : nSElement x = x.val := by
       have h_pred_pos : 0 < k - 1 := by omega
       have h_pred_le : k - 1 ≤ n := by grind [x.le]
       let y_pred : TruncatedAdd n := ⟨k - 1, h_pred_pos, h_pred_le⟩
-      have hy_pred_lt : GreenJClass.mk x < GreenJClass.mk y_pred := by
-        grind [greenJClass_lt_iff]
+      have hy_pred_lt : GreenJClass.mk x < GreenJClass.mk y_pred := by grind [greenJClass_lt_iff]
       have hy_pred_mem : y_pred ∈ strictlyAbove :=
         Finset.mem_filter.mpr ⟨Finset.mem_univ _, hy_pred_lt⟩
       have hy_pred_val : nSElement y_pred = k - 1 := by
@@ -361,7 +357,7 @@ theorem nSElement_truncatedAdd (x : TruncatedAdd n) : nSElement x = x.val := by
         have h_le_sup := Finset.le_sup (f := fun y ↦ nSElement y.1) h_in
         dsimp only at h_le_sup
         omega
-      grind [le_antisymm h_le h_ge]
+      grind only [le_antisymm h_le h_ge]
 
 open Classical in
 /-- For the truncated addition semigroup `TruncatedAdd n`, the complexity bound `nS` is

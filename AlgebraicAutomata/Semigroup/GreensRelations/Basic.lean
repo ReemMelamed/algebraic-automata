@@ -169,8 +169,10 @@ protected abbrev setoid (S : Type*) [Semigroup S] : Setoid S :=
   ⟨IsGreenL, { refl := refl, symm := symm, trans := trans }⟩
 
 /-- Green's `L`-relation is preserved by right multiplication. -/
-theorem mul_right (c : S) {a b : S} (h : IsGreenL a b) : IsGreenL (a * c) (b * c) := by
-  grind [mul_assoc, RightDvd]
+theorem mul_right (c : S) {a b : S} (h : IsGreenL a b) : IsGreenL (a * c) (b * c) :=
+  have step {x y : S} : IsGreenLeftDvd x y → IsGreenLeftDvd (x * c) (y * c) :=
+    fun | .inl rfl => .inl rfl | .inr ⟨z, hz⟩ => .inr ⟨z, by rw [hz, mul_assoc]⟩
+  ⟨step h.1, step h.2⟩
 
 /-- Right cancellation property for elements related by Green's `L`-relation. -/
 theorem cancellation {a x u v : S} (hx : IsGreenL x a) (h_cancel : a * u * v = a) :

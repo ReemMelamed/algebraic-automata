@@ -143,8 +143,7 @@ mutual
     | nil => contradiction
     | cons c rest =>
       have hc_ne := FactorizationTree.tree_value_ne_nil c hcs.1
-      have hX_c : ∀ x ∈ c.value, x ∈ X := fun x hx ↦ by
-        grind [FactorizationTree.listValue_cons]
+      have hX_c : ∀ x ∈ c.value, x ∈ X := fun x hx ↦ hX x (List.mem_append_left _ hx)
       have ih_c := closureSeq_mono ϕ X (le_max_left c.height (FactorizationTree.listHeight rest))
         (tree_prod_in_closureSeq ϕ X eval h_eval c hcs.1 hX_c hc_ne)
       have hc_phi : ϕ (listProdNE c.value hc_ne) = e := by
@@ -159,8 +158,8 @@ mutual
         rw [listProdNE_eq _ _ _ hc_ne (by simp [FactorizationTree.listValue])]
         exact hc_in
       · have hrest_val_ne := listTree_value_ne_nil rest eval hcs.2 hrest
-        have hX_rest : ∀ x ∈ FactorizationTree.listValue rest, x ∈ X := fun x hx ↦ by
-          grind [FactorizationTree.listValue_cons]
+        have hX_rest : ∀ x ∈ FactorizationTree.listValue rest, x ∈ X :=
+          fun x hx ↦ hX x (List.mem_append_right _ hx)
         have ih_rest := listTree_prod_in_closure ϕ X eval h_eval rest hcs.2 hrest e
           (fun t ht ↦ he_eval t (by simp [ht])) hX_rest
         have h_sub :
@@ -201,8 +200,8 @@ theorem closure_eq_closureSeq [Fintype T] [Nonempty T] (ϕ : S →ₙ* T) (X : S
     have ht_X : ∀ x ∈ t.value, x ∈ X := ht_val.symm ▸ huX
     have ht_ne : t.value ≠ [] := ht_val.symm ▸ hu
     have h_in_height := closureSeq_mono ϕ X ht_height
-      (tree_prod_in_closureSeq ϕ X eval_T (by grind) t ht_ramsey ht_X ht_ne)
-    grind
+      (tree_prod_in_closureSeq ϕ X eval_T (fun w hw ↦ dite_eq_right hw) t ht_ramsey ht_X ht_ne)
+    exact listProdNE_eq t.value u ht_ne hu ht_val ▸ h_in_height
   · exact fun hs ↦ closureSeq_subset_closure ϕ X (3 * nS T - 1) hs
 
 end AlgebraicPresentation
@@ -291,7 +290,7 @@ lemma finset_bUnion_mem_or_empty (P : Set (Set S)) (h_union : IsUnionClosed P)
     rw [Finset.set_biUnion_insert]
     rcases hf a (Finset.mem_insert_self a s') with hfa | hfa
     · rcases ih (fun b hb ↦ hf b (Finset.mem_insert_of_mem hb)) with hU | hU
-        <;> grind [union_empty, empty_union]
+        <;> simp [hfa, hU]
     · rcases ih (fun b hb ↦ hf b (Finset.mem_insert_of_mem hb)) with hU | hU
       · right
         rw [hU, union_empty]
@@ -384,7 +383,7 @@ lemma idempotent_closure_mem_restrictionFamily (ϕ : S →ₙ* T) (P : Set (Set 
   · exact h_cl_P
   · intro c
     rw [closure_inter_preimage_of_idempotent ϕ he h_sub c]
-    grind
+    split_ifs <;> [exact Or.inr h_cl_P; exact Or.inl rfl]
 
 open Classical in
 /-- The base generating set `X` belongs to the restriction family. -/
@@ -405,9 +404,17 @@ lemma baseSet_mem_restrictionFamily [Finite T] (ϕ : S →ₙ* T) (X : Set S) (P
   · intro c
     have h_slice : {x ∈ X | ϕ x = a} ∩ ϕ ⁻¹' {c} =
         if c = a then {x ∈ X | ϕ x = a} else ∅ := by
-      ext x
-      grind
-    grind
+      split_ifs with hc
+      · subst hc
+        ext x
+        simp (config := {contextual := true})
+      · ext x
+        simp only [mem_inter_iff, mem_ofPred_eq, mem_preimage, mem_singleton_iff,
+          mem_empty_iff_false, iff_false, not_and]
+        rintro ⟨-, hxa⟩ hxc
+        exact hc (hxc.symm.trans hxa)
+    rw [h_slice]
+    split_ifs <;> [exact Or.inr haP; exact Or.inl rfl]
 
 open Classical in
 /-- If `P` satisfies the closure conditions, the subsemigroup closure `⟨X⟩_S` belongs to `P`. -/
