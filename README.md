@@ -45,6 +45,4 @@ All proofs in this repository are machine-checked in Lean 4 without custom axiom
 
 ## References
 
-* Colcombet, T. - *The Factorisation Forest Theorem* (Handbook of Automata Theory, 2021)
-* Simon, I. - *Factorization forests of finite height* (Theoretical Computer Science, 1990)
-* Brown, T. C. - *An interesting combinatorial method in the theory of locally finite semigroups* (Pacific J. Math., 1971)
+* Colcombet, T. - *The Factorization Forest Theorem*
