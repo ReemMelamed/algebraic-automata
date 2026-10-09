@@ -1,9 +1,14 @@
+module
+
 /-
 Copyright (c) 2026 Re'em Melamed-Katz. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Re'em Melamed-Katz
 -/
-import Mathlib.Data.List.Basic
+public import Mathlib.Data.List.Basic
+
+@[expose] public section
+
 
 /-!
 # Slice operations on lists (drop and take combinations)
@@ -15,6 +20,7 @@ including concatenations and behavior with append.
 variable {A : Type*}
 
 -- TODO: Upstream to Mathlib.Data.List.Basic
+/-- Slices of a list over adjacent intervals concatenate to the slice over the combined interval. -/
 lemma list_drop_take_append (u : List A) (i k j : ℕ) (hik : i ≤ k) (hkj : k ≤ j) :
     (u.drop i).take (k - i) ++ (u.drop k).take (j - k) = (u.drop i).take (j - i) := by
   have h_drop : u.drop k = (u.drop i).drop (k - i) := by
@@ -25,11 +31,13 @@ lemma list_drop_take_append (u : List A) (i k j : ℕ) (hik : i ≤ k) (hkj : k 
   grind
 
 -- TODO: Upstream to Mathlib.Data.List.Basic
+/-- A slice of length 1 is a singleton containing the element at that index. -/
 lemma list_drop_take_one (u : List A) (i : ℕ) (hi : i < u.length) :
     (u.drop i).take 1 = [u[i]] :=
   congrArg (List.take 1) (List.drop_eq_getElem_cons hi)
 
 -- TODO: Upstream to Mathlib.Data.List.Basic
+/-- Taking a slice within the prefix `u` of `u ++ v` ignores `v`. -/
 lemma list_drop_take_append_left (u v : List A) (i j : ℕ) (hj : j ≤ u.length) :
     ((u ++ v).drop i).take (j - i) = (u.drop i).take (j - i) := by
   by_cases hij : i ≤ j
@@ -37,6 +45,8 @@ lemma list_drop_take_append_left (u v : List A) (i j : ℕ) (hj : j ≤ u.length
   · simp [show j - i = 0 by omega]
 
 -- TODO: Upstream to Mathlib.Data.List.Basic
+/-- Taking a slice beyond the prefix `u` of `u ++ v` extracts from `v`. -/
 lemma list_drop_take_append_right (u v : List A) (i j : ℕ) (hi : u.length ≤ i) :
     ((u ++ v).drop i).take (j - i) = (v.drop (i - u.length)).take (j - i) := by
   rw [List.drop_append, List.drop_eq_nil_of_le hi, List.nil_append]
+

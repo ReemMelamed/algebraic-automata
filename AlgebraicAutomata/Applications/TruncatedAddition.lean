@@ -1,12 +1,17 @@
+module
+
 /-
 Copyright (c) 2026 Re'em Melamed-Katz. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Re'em Melamed-Katz
 -/
-import Mathlib.Data.Fintype.Basic
-import Mathlib.Data.Finset.Basic
-import Mathlib.Data.Nat.Log
-import AlgebraicAutomata.FactorizationForest.Tree
+public import Mathlib.Data.Fintype.Basic
+public import Mathlib.Data.Finset.Basic
+public import Mathlib.Data.Nat.Log
+public import AlgebraicAutomata.FactorizationForest.Tree
+
+@[expose] public section
+
 
 /-!
 # Sub-linear Ramsey Factorization Trees: The Truncated Addition Semigroup
@@ -262,6 +267,7 @@ lemma isGreenJRel_val_le (a b : TruncatedAdd n) (h : IsGreenJRel a b) : b.val �
     rw [mul_assoc, mul_val, mul_val] at this
     omega
 
+/-- If `b.val ≤ a.val`, then `a ≤_J b` in `TruncatedAdd n`. -/
 lemma isGreenJRel_of_val_le (a b : TruncatedAdd n) (h : b.val ≤ a.val) : IsGreenJRel a b := by
   rcases eq_or_lt_of_le h with heq | hlt
   · exact .of_eq (TruncatedAdd.ext heq.symm)
@@ -302,6 +308,7 @@ theorem greenJClass_le_iff (a b : TruncatedAdd n) :
     GreenJClass.mk a ≤ GreenJClass.mk b ↔ b.val ≤ a.val :=
   isGreenJRel_iff_val_le a b
 
+/-- The strict J-order on `TruncatedAdd n` is the reverse of the strict value order. -/
 theorem greenJClass_lt_iff (a b : TruncatedAdd n) :
     GreenJClass.mk a < GreenJClass.mk b ↔ b.val < a.val := by
   change (GreenJClass.mk a ≤ GreenJClass.mk b ∧

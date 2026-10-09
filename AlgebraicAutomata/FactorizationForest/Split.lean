@@ -1,10 +1,15 @@
+module
+
 /-
 Copyright (c) 2026 Re'em Melamed-Katz. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Re'em Melamed-Katz
 -/
-import AlgebraicAutomata.FactorizationForest.Regular
-import AlgebraicAutomata.FactorizationForest.Irregular
+public import AlgebraicAutomata.FactorizationForest.Regular
+public import AlgebraicAutomata.FactorizationForest.Irregular
+
+@[expose] public section
+
 
 /-!
 # Simon's Split Theorem

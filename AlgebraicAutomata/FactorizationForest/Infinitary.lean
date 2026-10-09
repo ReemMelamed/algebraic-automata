@@ -1,13 +1,18 @@
+module
+
 /-
 Copyright (c) 2026 Re'em Melamed-Katz. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Re'em Melamed-Katz
 -/
-import Mathlib.Data.Fintype.Basic
-import Mathlib.Topology.Order
-import Mathlib.Topology.Compactness.Compact
-import Mathlib.Topology.Constructions
-import AlgebraicAutomata.FactorizationForest.Split
+public import Mathlib.Data.Fintype.Basic
+public import Mathlib.Topology.Order
+public import Mathlib.Topology.Compactness.Compact
+public import Mathlib.Topology.Constructions
+public import AlgebraicAutomata.FactorizationForest.Split
+
+@[expose] public section
+
 
 /-!
 # Infinitary Simon's Theorem over ℕ
@@ -79,6 +84,7 @@ lemma splitRelation_of_agree {n N : ℕ} (s : Split ℕ n) (s_fin : Split (Fin (
     (hsr : SplitRelation s x.val y.val) : SplitRelation s_fin x y := by
   grind
 
+/-- The split relation on `ℕ` is reflected to `finSplit σ N` for points within range `M ≤ N`. -/
 lemma splitRelation_finSplit {s : ℕ → Fin (nS S)} {M N : ℕ} (hMN : M ≤ N)
     (h_ext : ∀ k ≤ M, extendFinSplit σ N k = s k) {a b : ℕ} (ha : a ≤ M) (hb : b ≤ M)
     (h : SplitRelation s a b) :

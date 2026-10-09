@@ -1,13 +1,18 @@
+module
+
 /-
 Copyright (c) 2026 Re'em Melamed-Katz. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Re'em Melamed-Katz
 -/
-import Mathlib.Algebra.Group.Basic
-import Mathlib.Data.Fintype.Basic
-import Mathlib.Data.Finset.Basic
-import Mathlib.Data.List.Infix
-import AlgebraicAutomata.Applications.TruncatedAddition
+public import Mathlib.Algebra.Group.Basic
+public import Mathlib.Data.Fintype.Basic
+public import Mathlib.Data.Finset.Basic
+public import Mathlib.Data.List.Infix
+public import AlgebraicAutomata.Applications.TruncatedAddition
+
+@[expose] public section
+
 
 /-!
 # Aperiodic Semigroups and Height Bounds
@@ -77,9 +82,11 @@ def botEl (n : ℕ) (hn : 0 < n) : MaxSemigroup n := ⟨0, hn⟩
 def evalMax (n : ℕ) (hn : 0 < n) (u : List (MaxSemigroup n)) : MaxSemigroup n :=
   u.foldl max (botEl n hn)
 
+/-- The bottom element is bounded above by any element. -/
 lemma botEl_le (n : ℕ) (hn : 0 < n) (x : MaxSemigroup n) : botEl n hn ≤ x :=
   Nat.zero_le x.val
 
+/-- Taking max with the bottom element on the left is the identity. -/
 lemma max_botEl_left (n : ℕ) (hn : 0 < n) (x : MaxSemigroup n) :
     max (botEl n hn) x = x :=
   max_eq_right (botEl_le n hn x)
@@ -101,6 +108,7 @@ lemma evalMax_append (n : ℕ) (hn : 0 < n) (u v : List (MaxSemigroup n)) :
     evalMax n hn (u ++ v) = evalMax n hn u * evalMax n hn v :=
   (List.foldl_append ..).trans (foldl_max_eq_max n hn v (evalMax n hn u))
 
+/-- Evaluating `cons` takes the max with the head element. -/
 @[simp] lemma evalMax_cons (n : ℕ) (hn : 0 < n) (x : MaxSemigroup n) (xs : List (MaxSemigroup n)) :
     evalMax n hn (x :: xs) = max x (evalMax n hn xs) := by
   rw [evalMax, List.foldl_cons, max_botEl_left, foldl_max_eq_max]
@@ -123,6 +131,7 @@ lemma exists_mem_ge_of_evalMax_ge (n : ℕ) (hn : 0 < n) {k : MaxSemigroup n}
   | nil => exact (not_le_of_gt hk h).elim
   | cons y ys ih => grind [evalMax_cons]
 
+/-- Each tree in a list of Ramsey trees is itself a Ramsey tree. -/
 lemma isRamsey_of_mem_listIsRamsey {A S : Type*} [Semigroup S] {eval : List A → S}
     {cs : List (FactorizationTree A)} (hcs : listIsRamsey eval cs) {c : FactorizationTree A}
     (hc : c ∈ cs) : c.IsRamsey eval :=
@@ -174,21 +183,27 @@ Forces tree height to decrease by at least 2 levels across grandparent and grand
 def repeatTwentySeven {α : Type*} (l : List α) : List α :=
   repeatThree (repeatNine l)
 
+/-- `repeatThree l` is non-empty if `l` is non-empty. -/
 lemma repeatThree_ne_nil {α : Type*} {l : List α} (hl : l ≠ []) : repeatThree l ≠ [] :=
   fun h ↦ hl (List.append_eq_nil_iff.mp h).right
 
+/-- `repeatNine l` is non-empty if `l` is non-empty. -/
 lemma repeatNine_ne_nil {α : Type*} {l : List α} (hl : l ≠ []) : repeatNine l ≠ [] :=
   repeatThree_ne_nil (repeatThree_ne_nil hl)
 
+/-- `repeatTwentySeven l` is non-empty if `l` is non-empty. -/
 lemma repeatTwentySeven_ne_nil {α : Type*} {l : List α} (hl : l ≠ []) : repeatTwentySeven l ≠ [] :=
   repeatThree_ne_nil (repeatNine_ne_nil hl)
 
+/-- Elements of `repeatThree l` belong to `l`. -/
 lemma mem_repeatThree {α : Type*} {l : List α} {x : α} (hx : x ∈ repeatThree l) : x ∈ l := by
   grind [repeatThree]
 
+/-- Elements of `repeatNine l` belong to `l`. -/
 lemma mem_repeatNine {α : Type*} {l : List α} {x : α} (hx : x ∈ repeatNine l) : x ∈ l :=
   mem_repeatThree (mem_repeatThree hx)
 
+/-- Elements of `repeatTwentySeven l` belong to `l`. -/
 lemma mem_repeatTwentySeven {α : Type*} {l : List α} {x : α}
     (hx : x ∈ repeatTwentySeven l) : x ∈ l :=
   mem_repeatNine (mem_repeatThree hx)
@@ -213,18 +228,23 @@ lemma repeatThree_append_cases {α : Type*} (l : List α) (_ : l ≠ [])
     have hB_drop : B = (A ++ B).drop A.length := by simp
     grind
 
+/-- `l` is an infix of `repeatThree l`. -/
 lemma infix_repeatThree_of_self {α : Type*} (l : List α) : l <:+: repeatThree l :=
   ⟨[], l ++ l, by simp [repeatThree]⟩
 
+/-- `repeatThree l` is an infix of `repeatNine l`. -/
 lemma repeatThree_isInfix_repeatNine {α : Type*} (l : List α) : repeatThree l <:+: repeatNine l :=
   infix_repeatThree_of_self (repeatThree l)
 
+/-- `repeatNine l` is an infix of `repeatTwentySeven l`. -/
 lemma repeatNine_isInfix_repeatTwentySeven {α : Type*} (l : List α) :
     repeatNine l <:+: repeatTwentySeven l := infix_repeatThree_of_self (repeatNine l)
 
+/-- `l` is an infix of `repeatNine l`. -/
 lemma infix_repeatNine_of_self {α : Type*} (l : List α) : l <:+: repeatNine l :=
   (infix_repeatThree_of_self l).trans (repeatThree_isInfix_repeatNine l)
 
+/-- `l` is an infix of `repeatTwentySeven l`. -/
 lemma infix_repeatTwentySeven_of_self {α : Type*} (l : List α) : l <:+: repeatTwentySeven l :=
   (infix_repeatNine_of_self l).trans (repeatNine_isInfix_repeatTwentySeven l)
 

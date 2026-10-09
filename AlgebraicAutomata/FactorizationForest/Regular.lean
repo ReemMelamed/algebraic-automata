@@ -1,9 +1,14 @@
+module
+
 /-
 Copyright (c) 2026 Re'em Melamed-Katz. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Re'em Melamed-Katz
 -/
-import AlgebraicAutomata.FactorizationForest.Combine
+public import AlgebraicAutomata.FactorizationForest.Combine
+
+@[expose] public section
+
 
 /-!
 # Simon's Split Theorem — Regular `D`-Class Case
@@ -98,6 +103,7 @@ lemma lOf_well_defined (ctx : SplitContext S α) (x y1 y2 : α)
   (le_total y1 y2).elim (lOf_well_defined_of_le ctx x y1 y2 h_y1_lt_x h_y2_lt_x)
     fun h ↦ (lOf_well_defined_of_le ctx x y2 y1 h_y2_lt_x h_y1_lt_x h).symm
 
+/-- The $\mathcal{R}$-class of `ctx.σ.σ x y` is independent of `y > x` when ordered. -/
 lemma rOf_well_defined_of_le (ctx : SplitContext S α) (x y1 y2 : α)
     (h_x_lt_y1 : x < y1) (h_x_lt_y2 : x < y2) (h_le : y1 ≤ y2) :
     IsGreenR.eqvClass (ctx.σ.σ x y1) = IsGreenR.eqvClass (ctx.σ.σ x y2) := by

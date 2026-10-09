@@ -1,14 +1,19 @@
+module
+
 /-
 Copyright (c) 2026 Re'em Melamed-Katz. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Re'em Melamed-Katz
 -/
-import Mathlib.Algebra.Divisibility.Basic
-import Mathlib.Algebra.Group.Basic
-import Mathlib.Algebra.Group.Opposite
-import Mathlib.Data.Set.Basic
-import Mathlib.Basic.Finite.Defs
-import AlgebraicAutomata.ForMathlib.Algebra.Group.Opposite
+public import Mathlib.Algebra.Divisibility.Basic
+public import Mathlib.Algebra.Group.Basic
+public import Mathlib.Algebra.Group.Opposite
+public import Mathlib.Data.Set.Basic
+public import Mathlib.Basic.Finite.Defs
+public import AlgebraicAutomata.ForMathlib.Algebra.Group.Opposite
+
+@[expose] public section
+
 
 /-!
 # Green's Relations: Definitions and Basic Properties

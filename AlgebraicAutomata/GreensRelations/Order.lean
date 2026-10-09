@@ -1,10 +1,15 @@
+module
+
 /-
 Copyright (c) 2026 Re'em Melamed-Katz. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Re'em Melamed-Katz
 -/
-import Mathlib.Data.Fintype.Quotient
-import AlgebraicAutomata.GreensRelations.Finite
+public import Mathlib.Data.Fintype.Quotient
+public import AlgebraicAutomata.GreensRelations.Finite
+
+@[expose] public section
+
 
 /-!
 # Green's Relations Partial Orders

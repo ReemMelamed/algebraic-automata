@@ -1,11 +1,16 @@
+module
+
 /-
 Copyright (c) 2026 Re'em Melamed-Katz. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Re'em Melamed-Katz
 -/
-import AlgebraicAutomata.GreensRelations.Basic
-import AlgebraicAutomata.ForMathlib.Algebra.Group.Opposite
-import Mathlib.Data.Fintype.Pigeonhole
+public import AlgebraicAutomata.GreensRelations.Basic
+public import AlgebraicAutomata.ForMathlib.Algebra.Group.Opposite
+public import Mathlib.Data.Fintype.Pigeonhole
+
+@[expose] public section
+
 
 /-!
 # Multiplication Sequences and Helper Lemmas

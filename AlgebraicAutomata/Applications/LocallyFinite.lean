@@ -1,18 +1,23 @@
+module
+
 /-
 Copyright (c) 2026 Re'em Melamed-Katz. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Re'em Melamed-Katz
 -/
-import Mathlib.Algebra.Group.Pointwise.Set.Basic
-import Mathlib.Algebra.Group.Hom.Basic
-import Mathlib.Algebra.Group.Subsemigroup.Basic
-import Mathlib.Data.Set.Finite.Basic
-import Mathlib.Data.Set.Finite.Range
-import Mathlib.Data.Fintype.Basic
-import Mathlib.Algebra.Group.Pointwise.Set.Finite
-import Mathlib.Order.CompleteLattice.Finset
-import AlgebraicAutomata.FactorizationForest.Tree
-import AlgebraicAutomata.ForMathlib.Data.List.SemigroupProd
+public import Mathlib.Algebra.Group.Pointwise.Set.Basic
+public import Mathlib.Algebra.Group.Hom.Basic
+public import Mathlib.Algebra.Group.Subsemigroup.Basic
+public import Mathlib.Data.Set.Finite.Basic
+public import Mathlib.Data.Set.Finite.Range
+public import Mathlib.Data.Fintype.Basic
+public import Mathlib.Algebra.Group.Pointwise.Set.Finite
+public import Mathlib.Order.CompleteLattice.Finset
+public import AlgebraicAutomata.FactorizationForest.Tree
+public import AlgebraicAutomata.ForMathlib.Data.List.SemigroupProd
+
+@[expose] public section
+
 /-!
 # Locally Finite Semigroups and Brown's Lemma
 

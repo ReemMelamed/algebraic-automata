@@ -1,10 +1,15 @@
+module
+
 /-
 Copyright (c) 2026 Re'em Melamed-Katz. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Re'em Melamed-Katz
 -/
-import AlgebraicAutomata.GreensRelations.MulSeq
-import Mathlib.Data.Fintype.Card
+public import AlgebraicAutomata.GreensRelations.MulSeq
+public import Mathlib.Data.Fintype.Card
+
+@[expose] public section
+
 
 /-!
 # Main Theorems of Green's Relations

@@ -1,13 +1,18 @@
+module
+
 /-
 Copyright (c) 2026 Re'em Melamed-Katz. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Re'em Melamed-Katz
 -/
-import Mathlib.Data.Fintype.Basic
-import Mathlib.Data.Finset.Max
-import AlgebraicAutomata.FactorizationForest.Split
-import AlgebraicAutomata.ForMathlib.Data.List.SemigroupProd
-import AlgebraicAutomata.ForMathlib.Data.List.Slice
+public import Mathlib.Data.Fintype.Basic
+public import Mathlib.Data.Finset.Max
+public import AlgebraicAutomata.FactorizationForest.Split
+public import AlgebraicAutomata.ForMathlib.Data.List.SemigroupProd
+public import AlgebraicAutomata.ForMathlib.Data.List.Slice
+
+@[expose] public section
+
 
 /-!
 # Simon's Factorization Forest Theorem (Tree Version)
@@ -23,6 +28,7 @@ a Ramsey split (`simon_word`).
 
 open RamseySplit
 
+/-- Factorization tree over alphabet `A`: leaf, binary concatenation, or idempotent node. -/
 inductive FactorizationTree (A : Type*) where
   | leaf (a : A) : FactorizationTree A
   | binary (l r : FactorizationTree A) : FactorizationTree A
@@ -34,6 +40,7 @@ section TreeDefinitions
 
 variable {A : Type*}
 
+/-- Yields the list of leaves under `t` in left-to-right order. -/
 def value (t : FactorizationTree A) : List A :=
   match t with
   | leaf a => [a]
@@ -42,28 +49,34 @@ def value (t : FactorizationTree A) : List A :=
     (children.attach.map fun ⟨c, _⟩ => value c).flatten
 termination_by t
 
+/-- The yield of a leaf `leaf a` is `[a]`. -/
 @[simp]
 lemma value_leaf (a : A) : (leaf a).value = [a] := by
   unfold value
   rfl
 
+/-- The yield of a binary node is the concatenation of the yields of its children. -/
 @[simp]
 lemma value_binary (l r : FactorizationTree A) : (binary l r).value = l.value ++ r.value := by
   rw [value]
 
+/-- Yield of a list of factorization trees, concatenated left to right. -/
 def listValue (ts : List (FactorizationTree A)) : List A :=
   (ts.map value).flatten
 
+/-- Concatenation property for `listValue (t :: ts)`. -/
 @[simp]
 lemma listValue_cons (t : FactorizationTree A) (ts : List (FactorizationTree A)) :
     listValue (t :: ts) = value t ++ listValue ts := rfl
 
+/-- The yield of an idempotent node equals the yield of its children. -/
 @[simp]
 lemma value_idempotent (children : List (FactorizationTree A)) :
     (idempotent children).value = listValue children := by
   unfold value listValue
   simp
 
+/-- Height of a factorization tree. -/
 def height (t : FactorizationTree A) : ℕ :=
   match t with
   | leaf _ => 0
@@ -72,18 +85,22 @@ def height (t : FactorizationTree A) : ℕ :=
     1 + (children.attach.map fun ⟨c, _⟩ => height c).foldr max 0
 termination_by t
 
+/-- A leaf has height 0. -/
 @[simp]
 lemma height_leaf (a : A) : (leaf a).height = 0 := by rw [height]
 
+/-- Height of a binary node is $1 + \max(l.height, r.height)$. -/
 @[simp]
 lemma height_binary (l r : FactorizationTree A) :
   (binary l r).height = 1 + max l.height r.height := by
   rw [height]
 
+/-- Maximum height across a list of factorization trees. -/
 def listHeight : List (FactorizationTree A) → ℕ
   | [] => 0
   | t :: ts => max (height t) (listHeight ts)
 
+/-- Height of an idempotent node is $1 + \text{listHeight}(children)$. -/
 @[simp]
 lemma height_idempotent (children : List (FactorizationTree A)) :
     (idempotent children).height = 1 + listHeight children := by
@@ -95,11 +112,13 @@ lemma height_idempotent (children : List (FactorizationTree A)) :
   | cons c cs ih =>
     simp [listHeight, ih]
 
+/-- If every tree in `ts` has height $\le H$, then `listHeight ts \le H`. -/
 lemma listHeight_le {H : ℕ} : ∀ (ts : List (FactorizationTree A)),
     (∀ t ∈ ts, height t ≤ H) → listHeight ts ≤ H
   | [], _ => Nat.zero_le H
   | t :: ts, h => max_le (h t (.head _)) (listHeight_le ts fun x hx ↦ h x (.tail _ hx))
 
+/-- The height of any element of `ts` is bounded by `listHeight ts`. -/
 lemma height_le_listHeight {c : FactorizationTree A} {ts : List (FactorizationTree A)}
   (h : c ∈ ts) : c.height ≤ listHeight ts := by
   induction ts with
@@ -111,6 +130,7 @@ lemma height_le_listHeight {c : FactorizationTree A} {ts : List (FactorizationTr
     · dsimp [listHeight]
       exact (ih hmem).trans (by omega)
 
+/-- Induction principle for factorization trees. -/
 @[elab_as_elim]
 lemma induction_on {P : FactorizationTree A → Prop} (t : FactorizationTree A)
     (h_leaf : ∀ a, P (.leaf a))
@@ -134,6 +154,7 @@ lemma induction_on {P : FactorizationTree A → Prop} (t : FactorizationTree A)
 
 variable {S : Type*} [Semigroup S]
 
+/-- Predicate stating that `t` is a Ramsey factorization tree with respect to `eval`. -/
 def IsRamsey (eval : List A → S) (t : FactorizationTree A) : Prop :=
   match t with
   | leaf _ => True
@@ -144,26 +165,32 @@ def IsRamsey (eval : List A → S) (t : FactorizationTree A) : Prop :=
       ∃ e : S, e * e = e ∧ ∀ t ∈ children, eval (value t) = e
 termination_by t
 
+/-- A binary node is Ramsey iff both children are Ramsey. -/
 @[simp]
 lemma isRamsey_binary (eval : List A → S) (l r : FactorizationTree A) :
     (binary l r).IsRamsey eval ↔ l.IsRamsey eval ∧ r.IsRamsey eval := by rw [IsRamsey]
 
+/-- Predicate stating that all trees in a list are Ramsey. -/
 def listIsRamsey (eval : List A → S) : List (FactorizationTree A) → Prop
   | [] => True
   | t :: ts => IsRamsey eval t ∧ listIsRamsey eval ts
 
+/-- Every leaf is trivially Ramsey. -/
 lemma leaf_isRamsey (eval : List A → S) (a : A) : (leaf a).IsRamsey eval := by
   simp [IsRamsey]
 
+/-- Constructs a Ramsey binary node from Ramsey children. -/
 lemma binary_isRamsey (eval : List A → S) {l r : FactorizationTree A}
     (hl : l.IsRamsey eval) (hr : r.IsRamsey eval) :
     (binary l r).IsRamsey eval := (isRamsey_binary eval l r).mpr ⟨hl, hr⟩
 
+/-- `listIsRamsey eval cs` holds iff every `c ∈ cs` is Ramsey. -/
 lemma listIsRamsey_iff (eval : List A → S) :
     ∀ (ts : List (FactorizationTree A)), listIsRamsey eval ts ↔ ∀ t ∈ ts, t.IsRamsey eval
   | [] => by simp [listIsRamsey]
   | t :: ts => by simp [listIsRamsey, listIsRamsey_iff eval ts]
 
+/-- An idempotent node is Ramsey iff all children are Ramsey and yield identical values. -/
 @[simp]
 lemma isRamsey_idempotent (eval : List A → S) (children : List (FactorizationTree A)) :
     (idempotent children).IsRamsey eval ↔
@@ -173,12 +200,14 @@ lemma isRamsey_idempotent (eval : List A → S) (children : List (FactorizationT
   unfold IsRamsey
   rw [listIsRamsey_iff]
 
+/-- Membership characterization for elements of `listValue cs`. -/
 lemma mem_listValue {cs : List (FactorizationTree A)} {x : A}
     (h : x ∈ listValue cs) : ∃ c ∈ cs, x ∈ c.value := by
   obtain ⟨l, hl, hx⟩ := List.mem_flatten.mp h
   obtain ⟨c, hc, rfl⟩ := List.mem_map.mp hl
   exact ⟨c, hc, hx⟩
 
+/-- A Ramsey factorization tree yields a non-empty word. -/
 lemma tree_value_ne_nil {eval : List A → S} (t : FactorizationTree A)
     (ht : t.IsRamsey eval) : t.value ≠ [] := by
   induction t using FactorizationTree.induction_on with
@@ -207,6 +236,7 @@ variable (eval : List A → S)
 variable (hmul : ∀ u v, u ≠ [] → v ≠ [] → eval (u ++ v) = eval u * eval v)
 variable (u : List A)
 
+/-- Constructs a factorization tree from an inner split step. -/
 lemma split_to_tree_inner {n : ℕ} (m : ℕ) (_ : m < n)
     (s : Split (Fin (u.length + 1)) n)
     (h_ramsey : IsRamsey (wordLabeling eval hmul u) s)
@@ -307,6 +337,7 @@ lemma split_to_tree_inner {n : ℕ} (m : ℕ) (_ : m < n)
   intro hij hsi hsj h_between
   exact H ((j : ℕ) - (i : ℕ)) i j hij rfl hsi hsj h_between
 
+/-- Constructs a factorization tree from an outer split step. -/
 lemma split_to_tree_outer {n : ℕ}
     (s : Split (Fin (u.length + 1)) n)
     (h_ramsey : IsRamsey (wordLabeling eval hmul u) s) :
@@ -458,6 +489,7 @@ end SplitToTree
 
 section ForestTheorem
 
+/-- Simon's Factorization Forest Theorem for finite semigroups with evaluation map. -/
 theorem factorization_forest_theorem {A S : Type*} [Semigroup S] [Fintype S]
     [Nonempty S]
     (eval : List A → S)
@@ -573,6 +605,7 @@ theorem factorization_forest_theorem {A S : Type*} [Semigroup S] [Fintype S]
         simp
         grind⟩
 
+/-- Simon's Factorization Forest Theorem for semigroup homomorphisms. -/
 theorem factorization_forest_theorem_mulHom {S T : Type*} [Semigroup S] [Semigroup T]
     [Fintype T] [Nonempty T] (ϕ : S →ₙ* T) (u : List S) (hu : u ≠ []) :
     let eval_T : List S → T :=
@@ -587,6 +620,7 @@ theorem factorization_forest_theorem_mulHom {S T : Type*} [Semigroup S] [Semigro
       listProdNE_concat v w hv hw, ϕ.map_mul]
   exact factorization_forest_theorem eval_T hmul_T u hu
 
+/-- Classical height bound $3|S| - 1$ for factorization trees. -/
 theorem factorization_forest_classical_bound {A S : Type*} [Semigroup S] [Fintype S]
     [Nonempty S]
     (eval : List A → S)
@@ -598,6 +632,7 @@ theorem factorization_forest_classical_bound {A S : Type*} [Semigroup S] [Fintyp
       t.height ≤ 3 * Fintype.card S - 1 := by
   grind [nS_le_card, factorization_forest_theorem eval hmul u hu]
 
+/-- Classical height bound $3|S| - 1$ for semigroup homomorphisms. -/
 theorem factorization_forest_classical_bound_mulHom {S T : Type*} [Semigroup S] [Semigroup T]
     [Fintype T] [Nonempty T] (ϕ : S →ₙ* T) (u : List S) (hu : u ≠ []) :
     let eval_T : List S → T :=
@@ -620,6 +655,7 @@ open FactorizationTree
 
 variable {A : Type*}
 
+/-- Locates the child containing index `i` in a list of trees. -/
 def locateCut : (cs : List (FactorizationTree A)) → ℕ →
     Option ({ c : FactorizationTree A // c ∈ cs } × ℕ) ⊕ Unit
   | [], _ => .inr ()
@@ -636,6 +672,7 @@ def locateCut : (cs : List (FactorizationTree A)) → ℕ →
       | .inl none => .inl none
       | .inl (some (⟨c', hc'⟩, idx)) => .inl (some (⟨c', by simp [hc']⟩, idx))
 
+/-- Raw lowest-common-ancestor height for cut index `i`. -/
 def lcaHeightRaw (t : FactorizationTree A) (i : ℕ) : ℕ :=
   match t with
   | .leaf _ => 0
@@ -654,12 +691,15 @@ def lcaHeightRaw (t : FactorizationTree A) (i : ℕ) : ℕ :=
     | .inl (some (⟨c, _⟩, idx)) => lcaHeightRaw c idx
 termination_by t
 
+/-- Bounded lowest-common-ancestor height in `Fin (t.height + 1)`. -/
 def lcaHeight (t : FactorizationTree A) (i : ℕ) : Fin (t.height + 1) :=
   ⟨min (lcaHeightRaw t i) t.height, Nat.lt_succ_of_le (min_le_right _ _)⟩
 
+/-- Constructs a split function from a factorization tree via LCA heights. -/
 def treeToSplit (t : FactorizationTree A) : Split (Fin (t.value.length + 1)) (t.height + 1) :=
   fun i ↦ lcaHeight t i.val
 
+/-- The raw LCA height at index `i` is at most the height of `t`. -/
 lemma lcaHeightRaw_le_height (t : FactorizationTree A) (i : ℕ) :
     lcaHeightRaw t i ≤ t.height := by
   induction t using FactorizationTree.induction_on generalizing i with
@@ -694,6 +734,7 @@ lemma lcaHeightRaw_le_height (t : FactorizationTree A) (i : ℕ) :
         have h_le := height_le_listHeight hc
         omega
 
+/-- Evaluation of `treeToSplit t` at index `i`. -/
 @[simp]
 lemma treeToSplit_val (t : FactorizationTree A) (i : Fin (t.value.length + 1)) :
     (treeToSplit t i).val = lcaHeightRaw t i.val := by
@@ -701,17 +742,20 @@ lemma treeToSplit_val (t : FactorizationTree A) (i : Fin (t.value.length + 1)) :
   dsimp [lcaHeight]
   rw [min_eq_left (lcaHeightRaw_le_height t i)]
 
+/-- LCA height in the left child of a binary node. -/
 lemma lcaHeightRaw_binary_left (l r : FactorizationTree A) {i : ℕ} (hi : i < l.value.length) :
     lcaHeightRaw (.binary l r) i = lcaHeightRaw l i := by
   rw [lcaHeightRaw]
   split_ifs
   rfl
 
+/-- LCA height in the right child of a binary node. -/
 lemma lcaHeightRaw_binary_right (l r : FactorizationTree A) {i : ℕ} (hi : l.value.length < i) :
     lcaHeightRaw (.binary l r) i = lcaHeightRaw r (i - l.value.length) := by
   rw [lcaHeightRaw]
   grind
 
+/-- LCA height of an index different from the split point is strictly less than node height. -/
 lemma lcaHeightRaw_binary_lt (l r : FactorizationTree A) {i : ℕ} (hi : i ≠ l.value.length) :
     lcaHeightRaw (.binary l r) i < (binary l r).height := by
   rcases lt_or_gt_of_ne hi with hlt | hgt
@@ -724,16 +768,20 @@ lemma lcaHeightRaw_binary_lt (l r : FactorizationTree A) {i : ℕ} (hi : i ≠ l
     rw [height_binary]
     omega
 
+/-- Symmetry of `SplitRelation`. -/
 lemma splitRelation_comm {α : Type*} [LinearOrder α] {h : ℕ} (s : Split α h) (x y : α) :
     SplitRelation s x y ↔ SplitRelation s y x := by grind
 
+/-- Reflexivity of `SplitRelation`. -/
 lemma splitRelation_refl {α : Type*} [LinearOrder α] {h : ℕ} (s : Split α h) (x : α) :
     SplitRelation s x x := by grind
 
+/-- Intermediate strictly smaller rank breaks `SplitRelation`. -/
 lemma not_splitRelation_of_between_lt {α : Type*} [LinearOrder α] {h : ℕ} (s : Split α h)
     {x y z : α} (hxz : x ≤ z) (hzy : z ≤ y) (hlt : s x < s z) : ¬ SplitRelation s x y := by
   grind
 
+/-- Cases for `SplitRelation` under binary tree concatenation. -/
 lemma splitRelation_binary_cases {l r : FactorizationTree A}
     {x y : Fin ((binary l r).value.length + 1)} (hxy : x < y)
     (hrel : SplitRelation (treeToSplit (.binary l r)) x y) :
@@ -756,6 +804,7 @@ lemma splitRelation_binary_cases {l r : FactorizationTree A}
     rw [show x = mid from Fin.ext hx_eq, h_mid] at h_eq
     omega
 
+/-- `SplitRelation` restricted to the left child of a binary node. -/
 lemma splitRelation_binary_left {l r : FactorizationTree A}
     {x y : Fin ((binary l r).value.length + 1)} (hxy : x < y)
     (hy : y.val < l.value.length)
@@ -769,6 +818,7 @@ lemma splitRelation_binary_left {l r : FactorizationTree A}
   · intro z _ _
     grind [hrel.2 ⟨z.val, by grind⟩, treeToSplit_val, lcaHeightRaw_binary_left]
 
+/-- `SplitRelation` restricted to the right child of a binary node. -/
 lemma splitRelation_binary_right {l r : FactorizationTree A}
     {x y : Fin ((binary l r).value.length + 1)} (hxy : x < y)
     (hx : l.value.length < x.val)
@@ -782,6 +832,7 @@ lemma splitRelation_binary_right {l r : FactorizationTree A}
   · intro z _ _
     grind [hrel.2 ⟨z.val + l.value.length, by grind⟩, treeToSplit_val, lcaHeightRaw_binary_right]
 
+/-- Word labeling on the left component of a binary node. -/
 lemma wordLabeling_binary_left {S : Type*} [Semigroup S]
     (eval : List A → S)
     (hmul : ∀ u v, u ≠ [] → v ≠ [] → eval (u ++ v) = eval u * eval v)
@@ -795,6 +846,7 @@ lemma wordLabeling_binary_left {S : Type*} [Semigroup S]
   simp
   grind
 
+/-- Word labeling on the right component of a binary node. -/
 lemma wordLabeling_binary_right {S : Type*} [Semigroup S]
     (eval : List A → S)
     (hmul : ∀ u v, u ≠ [] → v ≠ [] → eval (u ++ v) = eval u * eval v)
@@ -810,6 +862,7 @@ lemma wordLabeling_binary_right {S : Type*} [Semigroup S]
         grind [value_binary]⟩ := by
   grind only [locateCut, value_binary, list_drop_take_append_right _ _ _ _ hx]
 
+/-- LCA height at child boundaries in an idempotent node equals node height. -/
 lemma lcaHeightRaw_idempotent_eq_height {cs : List (FactorizationTree A)} {i : ℕ} :
     lcaHeightRaw (.idempotent cs) i = (idempotent cs).height ↔
     locateCut cs i = .inl none := by
@@ -828,21 +881,25 @@ lemma lcaHeightRaw_idempotent_eq_height {cs : List (FactorizationTree A)} {i : �
       simp
       omega
 
+/-- Locating a cut at the boundary between children. -/
 lemma locateCut_cons_mid (c : FactorizationTree A) (cs : List (FactorizationTree A))
     (hcs : cs ≠ []) :
     locateCut (c :: cs) c.value.length = .inl none := by
   grind only [locateCut]
 
+/-- Locating a cut strictly within the head child. -/
 lemma locateCut_cons_left (c : FactorizationTree A) (cs : List (FactorizationTree A))
     {i : ℕ} (hi : i < c.value.length) :
     locateCut (c :: cs) i = .inl (some (⟨c, by simp⟩, i)) := by
   grind only [locateCut]
 
+/-- LCA height within the head child in an idempotent node. -/
 lemma lcaHeightRaw_idempotent_cons_left (c : FactorizationTree A) (cs : List (FactorizationTree A))
     {i : ℕ} (hi : i < c.value.length) :
     lcaHeightRaw (.idempotent (c :: cs)) i = lcaHeightRaw c i := by
   rw [lcaHeightRaw, locateCut_cons_left c cs hi]
 
+/-- LCA height within head child is strictly less than idempotent node height. -/
 lemma lcaHeightRaw_idempotent_cons_left_lt (c : FactorizationTree A)
     (cs : List (FactorizationTree A)) {i : ℕ} (hi : i < c.value.length) :
     lcaHeightRaw (.idempotent (c :: cs)) i < (idempotent (c :: cs)).height := by
@@ -851,14 +908,17 @@ lemma lcaHeightRaw_idempotent_cons_left_lt (c : FactorizationTree A)
   have h2 : c.height ≤ listHeight (c :: cs) := height_le_listHeight (by simp)
   omega
 
+/-- Locating cut at the end of a singleton child list. -/
 lemma locateCut_singleton_length (c : FactorizationTree A) :
     locateCut [c] c.value.length = .inr () := by
   grind only [locateCut]
 
+/-- LCA height at the end of a singleton child list. -/
 lemma lcaHeightRaw_idempotent_singleton_length (c : FactorizationTree A) :
     lcaHeightRaw (.idempotent [c]) c.value.length = 0 := by
   rw [lcaHeightRaw, locateCut_singleton_length]
 
+/-- Locating a cut within remaining children. -/
 lemma locateCut_cons_right (c : FactorizationTree A) (cs : List (FactorizationTree A))
     {i : ℕ} (hi : c.value.length < i) :
     locateCut (c :: cs) i =
@@ -868,6 +928,7 @@ lemma locateCut_cons_right (c : FactorizationTree A) (cs : List (FactorizationTr
       | .inl (some (⟨c', hc'⟩, idx)) => .inl (some (⟨c', by simp [hc']⟩, idx)) := by
   cases cs <;> grind only [locateCut]
 
+/-- Locating a cut at the yield length of a list of trees. -/
 lemma locateCut_at_length (cs : List (FactorizationTree A))
     (h_ne : ∀ c ∈ cs, c.value ≠ []) :
     locateCut cs (listValue cs).length = .inr () := by
@@ -890,6 +951,7 @@ lemma locateCut_at_length (cs : List (FactorizationTree A))
       rw [locateCut_cons_right c (c' :: cs') h_gt, h_sub,
         ih (fun d hd ↦ h_ne d (by simp [hd]))]
 
+/-- LCA height at the right boundary of a tree. -/
 lemma lcaHeightRaw_at_length {S : Type*} [Semigroup S] {eval : List A → S} (t : FactorizationTree A)
     (ht : t.IsRamsey eval) :
     lcaHeightRaw t t.value.length = 0 := by
@@ -912,6 +974,7 @@ lemma lcaHeightRaw_at_length {S : Type*} [Semigroup S] {eval : List A → S} (t 
     have h_ne c hc := tree_value_ne_nil c ((listIsRamsey_iff eval children).mp ht.2.1 c hc)
     rw [lcaHeightRaw, value_idempotent, locateCut_at_length children h_ne]
 
+/-- Cases for `SplitRelation` under idempotent nodes. -/
 lemma splitRelation_idempotent_cases {c : FactorizationTree A} {cs : List (FactorizationTree A)}
     (hcs : cs ≠ [])
     {x y : Fin ((idempotent (c :: cs)).value.length + 1)} (_hxy : x < y)
@@ -928,6 +991,7 @@ lemma splitRelation_idempotent_cases {c : FactorizationTree A} {cs : List (Facto
   exact not_splitRelation_of_between_lt (treeToSplit (.idempotent (c :: cs)))
     (by grind) (by grind) hlt hrel
 
+/-- Word labeling within the head child of an idempotent node. -/
 lemma wordLabeling_idempotent_left {S : Type*} [Semigroup S]
     (eval : List A → S)
     (hmul : ∀ u v, u ≠ [] → v ≠ [] → eval (u ++ v) = eval u * eval v)
@@ -940,6 +1004,7 @@ lemma wordLabeling_idempotent_left {S : Type*} [Semigroup S]
       ⟨y.val, by omega⟩ := by
   simp only [value_idempotent, listValue_cons, list_drop_take_append_left _ _ _ _ hy]
 
+/-- `SplitRelation` within the head child of an idempotent node. -/
 lemma splitRelation_idempotent_left {c : FactorizationTree A}
     {cs : List (FactorizationTree A)}
     {x y : Fin ((idempotent (c :: cs)).value.length + 1)} (hxy : x < y)
@@ -955,6 +1020,7 @@ lemma splitRelation_idempotent_left {c : FactorizationTree A}
     grind [hrel.2 ⟨z.val, by grind [value_idempotent, listValue]⟩, treeToSplit_val,
       lcaHeightRaw_idempotent_cons_left]
 
+/-- LCA height for indices past the head child. -/
 lemma lcaHeightRaw_idempotent_cons_right_of_lt (c : FactorizationTree A)
     (cs : List (FactorizationTree A)) {i : ℕ} (hi : c.value.length < i)
     (hlt : lcaHeightRaw (.idempotent (c :: cs)) i < (idempotent (c :: cs)).height) :
@@ -964,10 +1030,12 @@ lemma lcaHeightRaw_idempotent_cons_right_of_lt (c : FactorizationTree A)
   rw [lcaHeightRaw]
   grind
 
+/-- Length equation for cons in idempotent nodes. -/
 lemma length_idempotent_cons (c : FactorizationTree A) (cs : List (FactorizationTree A)) :
     (idempotent (c :: cs)).value.length = c.value.length + (idempotent cs).value.length := by
   simp only [value_idempotent, listValue_cons, List.length_append]
 
+/-- Word labeling for indices past the head child in an idempotent node. -/
 lemma wordLabeling_idempotent_cons_right {S : Type*} [Semigroup S]
     (eval : List A → S)
     (hmul : ∀ u v, u ≠ [] → v ≠ [] → eval (u ++ v) = eval u * eval v)
@@ -982,6 +1050,7 @@ lemma wordLabeling_idempotent_cons_right {S : Type*} [Semigroup S]
   simp only [value_idempotent, listValue_cons, list_drop_take_append_right _ _ _ _ hx,
     show y.val - c.value.length - (x.val - c.value.length) = y.val - x.val by omega]
 
+/-- `SplitRelation` for indices past the head child in an idempotent node. -/
 lemma splitRelation_idempotent_cons_right {c : FactorizationTree A}
     {cs : List (FactorizationTree A)}
     {x y : Fin ((idempotent (c :: cs)).value.length + 1)} (hxy : x < y)
@@ -1031,10 +1100,12 @@ lemma splitRelation_idempotent_cons_right {c : FactorizationTree A}
     rw [h1, h2] at h_bet_val
     exact Fin.le_iff_val_le_val.mpr h_bet_val
 
+/-- Singleton `locateCut` cannot return `none` on valid indices. -/
 lemma locateCut_singleton_ne_inl_none (c : FactorizationTree A) (i : ℕ) :
     locateCut [c] i ≠ .inl none := by
   grind only [locateCut]
 
+/-- Characterization of boundary cuts between consecutive children. -/
 lemma locateCut_cons_cons_inl_none_iff (c c' : FactorizationTree A)
     (cs : List (FactorizationTree A)) (i : ℕ) :
     locateCut (c :: c' :: cs) i = .inl none ↔
@@ -1042,8 +1113,10 @@ lemma locateCut_cons_cons_inl_none_iff (c c' : FactorizationTree A)
     (i - c.value.length) = .inl none) := by
   grind only [locateCut]
 
+/-- `locateCut` on empty list yields `inr ()`. -/
 lemma locateCut_nil (i : ℕ) : locateCut ([] : List (FactorizationTree A)) i = .inr () := rfl
 
+/-- Evaluation of prefix up to a cut boundary equals child evaluations. -/
 lemma eval_take_of_locateCut_eq_none {S : Type*} [Semigroup S]
     (eval : List A → S)
     (hmul : ∀ u v, u ≠ [] → v ≠ [] → eval (u ++ v) = eval u * eval v)
@@ -1065,6 +1138,7 @@ lemma eval_take_of_locateCut_eq_none {S : Type*} [Semigroup S]
       · grind
       · grind [List.take_append, List.take_of_length_le h_gt.le]
 
+/-- Evaluation of slice between cut boundaries equals child evaluation. -/
 lemma eval_slice_of_locateCut_eq_none {S : Type*} [Semigroup S]
     (eval : List A → S)
     (hmul : ∀ u v, u ≠ [] → v ≠ [] → eval (u ++ v) = eval u * eval v)
@@ -1092,6 +1166,7 @@ lemma eval_slice_of_locateCut_eq_none {S : Type*} [Semigroup S]
         exact ih (fun z hz ↦ h_eval z (.tail _ hz)) (fun z hz ↦ h_ne z (.tail _ hz))
           (by omega) hx_tail (hy.resolve_left (by omega)).2
 
+/-- The split induced by a leaf is Ramsey. -/
 lemma treeToSplit_leaf_isRamsey {S : Type*} [Semigroup S]
     (eval : List A → S)
     (hmul : ∀ u v, u ≠ [] → v ≠ [] → eval (u ++ v) = eval u * eval v)
@@ -1106,6 +1181,7 @@ lemma treeToSplit_leaf_isRamsey {S : Type*} [Semigroup S]
     have := v.isLt
     grind [value_leaf]
 
+/-- Adjacent points of maximal rank evaluate to the same idempotent value. -/
 lemma idempotent_of_lt {S : Type*} [Semigroup S]
     (eval : List A → S)
     (hmul : ∀ u v, u ≠ [] → v ≠ [] → eval (u ++ v) = eval u * eval v)
@@ -1281,6 +1357,7 @@ lemma idempotent_of_lt {S : Type*} [Semigroup S]
             (splitRelation_idempotent_cons_right huv hu_gt hu_lt_ht hrel_uv)
             hrel_xu_cs
 
+/-- The split function constructed from a Ramsey tree is Ramsey. -/
 theorem tree_to_split_isRamsey {S : Type*} [Semigroup S]
     (eval : List A → S)
     (hmul : ∀ u v, u ≠ [] → v ≠ [] → eval (u ++ v) = eval u * eval v)
@@ -1368,6 +1445,7 @@ theorem tree_to_split_isRamsey {S : Type*} [Semigroup S]
         rw [h_eval_e hxy hrel_xy hx, h_eval_e huv hrel_uv hu]
       · exact h_lt_cases.2 x y u v hxy huv (h_lt hx) hrel_xy hrel_uv hrel_xu
 
+/-- The split constructed from a Ramsey tree under a homomorphism is Ramsey. -/
 theorem tree_to_split_isRamsey_mulHom {S T : Type*} [Semigroup S] [Semigroup T]
     [Nonempty T] (ϕ : S →ₙ* T) (t : FactorizationTree S)
     (ht : t.IsRamsey (fun w ↦ if hw : w = [] then Classical.arbitrary T else ϕ (listProdNE w hw))) :

@@ -1,10 +1,15 @@
+module
+
 /-
 Copyright (c) 2026 Re'em Melamed-Katz. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Re'em Melamed-Katz
 -/
-import Mathlib.Algebra.Group.Opposite
-import Mathlib.Basic.Finite.Defs
+public import Mathlib.Algebra.Group.Opposite
+public import Mathlib.Basic.Finite.Defs
+
+@[expose] public section
+
 
 /-!
 # Finiteness of `MulOpposite`

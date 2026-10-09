@@ -1,11 +1,16 @@
+module
+
 /-
 Copyright (c) 2026 Re'em Melamed-Katz. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Re'em Melamed-Katz
 -/
-import Mathlib.Data.Fintype.Card
-import Mathlib.Data.Finset.Max
-import AlgebraicAutomata.GreensRelations.Order
+public import Mathlib.Data.Fintype.Card
+public import Mathlib.Data.Finset.Max
+public import AlgebraicAutomata.GreensRelations.Order
+
+@[expose] public section
+
 
 /-!
 # Ramsey Splits — Basic Definitions
@@ -54,6 +59,7 @@ lemma SplitRelation.comp_strictMono {h₁ h₂ : ℕ} (s : Split α h₁) (f : F
     SplitRelation (f ∘ s) x y ↔ SplitRelation s x y := by
   simp only [SplitRelation, Function.comp_apply, hf.injective.eq_iff, hf.le_iff_le]
 
+/-- Points of equal rank with bounded intermediate ranks satisfy `SplitRelation`. -/
 lemma splitRelation_of_le_between {α : Type*} [LinearOrder α] {h : ℕ} (s : Split α h)
     {a b : α} (hab : a < b) (heq : s a = s b)
     (hbetween : ∀ z, a < z → z < b → s z ≤ s a) : SplitRelation s a b := by
@@ -83,6 +89,7 @@ abbrev IsRamsey (L : MultiplicativeLabeling S α) (s : Split α h) : Prop :=
     SplitRelation s x y → SplitRelation s u v → SplitRelation s x u →
     L.σ x y = L.σ u v)
 
+/-- Properties of labels on three adjacent split-related points in a Ramsey labeling. -/
 lemma isRamsey_idem_step {L : MultiplicativeLabeling S α} {s : Split α h} (h_ramsey : IsRamsey L s)
     {x y z : α} (hxy : x < y) (hyz : y < z)
     (h_rel_xy : SplitRelation s x y) (h_rel_yz : SplitRelation s y z) :
