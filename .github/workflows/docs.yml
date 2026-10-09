@@ -18,6 +18,9 @@ jobs:
   docs:
     name: Build & Deploy Documentation
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -29,6 +32,7 @@ jobs:
         run: lake exe cache get
 
       - name: Generate and deploy documentation
+        id: deployment
         uses: leanprover-community/docgen-action@v1
         with:
-          lake-package-directory: "."
+          lake_package_directory: "."
