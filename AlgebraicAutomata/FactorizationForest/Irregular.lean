@@ -1,14 +1,11 @@
-module
-
 /-
 Copyright (c) 2026 Re'em Melamed-Katz. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Re'em Melamed-Katz
 -/
+module
+
 public import AlgebraicAutomata.FactorizationForest.Combine
-
-@[expose] public section
-
 
 /-!
 # Simon's Split Theorem — Irregular `D`-Class Case
@@ -20,6 +17,9 @@ is irregular, using the fact that the sequence length is at most 2.
 
 * [T. Colcombet, *The Factorization Forest Theorem*][colcombet2008]
 -/
+
+@[expose] public section
+
 
 namespace RamseySplit
 

@@ -1,15 +1,12 @@
-module
-
 /-
 Copyright (c) 2026 Re'em Melamed-Katz. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Re'em Melamed-Katz
 -/
+module
+
 public import AlgebraicAutomata.GreensRelations.MulSeq
 public import Mathlib.Data.Fintype.Card
-
-@[expose] public section
-
 
 /-!
 # Main Theorems of Green's Relations
@@ -21,6 +18,9 @@ Major structural theorems for Green's relations, including Green's Lemma and reg
 
 * [T. Colcombet, *The Factorization Forest Theorem*][colcombet2008]
 -/
+
+@[expose] public section
+
 
 namespace GreensRelations
 

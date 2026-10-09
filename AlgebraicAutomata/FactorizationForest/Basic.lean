@@ -1,16 +1,13 @@
-module
-
 /-
 Copyright (c) 2026 Re'em Melamed-Katz. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Re'em Melamed-Katz
 -/
+module
+
 public import Mathlib.Data.Fintype.Card
 public import Mathlib.Data.Finset.Max
 public import AlgebraicAutomata.GreensRelations.Order
-
-@[expose] public section
-
 
 /-!
 # Ramsey Splits — Basic Definitions
@@ -22,6 +19,9 @@ labelings, splits, Ramsey condition, and Green's relation invariants.
 
 * [T. Colcombet, *The Factorization Forest Theorem*][colcombet2008]
 -/
+
+@[expose] public section
+
 
 namespace RamseySplit
 

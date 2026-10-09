@@ -1,14 +1,11 @@
-module
-
 /-
 Copyright (c) 2026 Re'em Melamed-Katz. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Re'em Melamed-Katz
 -/
+module
+
 public import AlgebraicAutomata.GreensRelations.Green
-
-@[expose] public section
-
 
 /-!
 # Finite Semigroup Theorems for Green's Relations
@@ -19,6 +16,9 @@ Structural theorems for Green's relations on finite semigroups, including `D` = 
 
 * [T. Colcombet, *The Factorization Forest Theorem*][colcombet2008]
 -/
+
+@[expose] public section
+
 
 namespace GreensRelations
 

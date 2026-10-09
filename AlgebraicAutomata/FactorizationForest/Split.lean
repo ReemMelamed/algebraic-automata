@@ -1,15 +1,12 @@
-module
-
 /-
 Copyright (c) 2026 Re'em Melamed-Katz. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Re'em Melamed-Katz
 -/
+module
+
 public import AlgebraicAutomata.FactorizationForest.Regular
 public import AlgebraicAutomata.FactorizationForest.Irregular
-
-@[expose] public section
-
 
 /-!
 # Simon's Split Theorem
@@ -21,6 +18,9 @@ and applies it to word labelings (`simon_word`).
 
 * [T. Colcombet, *The Factorization Forest Theorem*][colcombet2008]
 -/
+
+@[expose] public section
+
 
 namespace RamseySplit
 

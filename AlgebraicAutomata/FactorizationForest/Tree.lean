@@ -1,18 +1,15 @@
-module
-
 /-
 Copyright (c) 2026 Re'em Melamed-Katz. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Re'em Melamed-Katz
 -/
+module
+
 public import Mathlib.Data.Fintype.Basic
 public import Mathlib.Data.Finset.Max
 public import AlgebraicAutomata.FactorizationForest.Split
 public import AlgebraicAutomata.ForMathlib.Data.List.SemigroupProd
 public import AlgebraicAutomata.ForMathlib.Data.List.Slice
-
-@[expose] public section
-
 
 /-!
 # Simon's Factorization Forest Theorem (Tree Version)
@@ -25,6 +22,9 @@ a Ramsey split (`simon_word`).
 
 * [T. Colcombet, *The Factorization Forest Theorem*][colcombet2008]
 -/
+
+@[expose] public section
+
 
 open RamseySplit
 

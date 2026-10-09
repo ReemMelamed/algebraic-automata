@@ -1,14 +1,11 @@
-module
-
 /-
 Copyright (c) 2026 Re'em Melamed-Katz. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Re'em Melamed-Katz
 -/
+module
+
 public import Mathlib.Data.List.Basic
-
-@[expose] public section
-
 
 /-!
 # Slice operations on lists (drop and take combinations)
@@ -16,6 +13,9 @@ public import Mathlib.Data.List.Basic
 Lemmas concerning taking slices of lists using `(u.drop i).take (j - i)`,
 including concatenations and behavior with append.
 -/
+
+@[expose] public section
+
 
 variable {A : Type*}
 

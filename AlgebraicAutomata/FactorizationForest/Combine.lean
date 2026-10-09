@@ -1,16 +1,13 @@
-module
-
 /-
 Copyright (c) 2026 Re'em Melamed-Katz. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Re'em Melamed-Katz
 -/
+module
+
 public import Mathlib.Data.Fintype.Card
 public import Mathlib.Data.Finset.Max
 public import AlgebraicAutomata.FactorizationForest.Basic
-
-@[expose] public section
-
 
 /-!
 # Combine Splits Construction
@@ -22,6 +19,9 @@ lemma `combineSplits_props` that assembles a global Ramsey split from interval s
 
 * [T. Colcombet, *The Factorization Forest Theorem*][colcombet2008]
 -/
+
+@[expose] public section
+
 
 namespace RamseySplit
 
@@ -102,13 +102,15 @@ lemma nD_le_card_eqvClass (x : S) :
 
 open Classical in
 omit [Fintype S] in
-/-- Membership in the $\mathcal{D}$-class coincides with equality of $\mathcal{J}$-classes in finite semigroups. -/
+/-- Membership in the $\mathcal{D}$-class coincides with equality of $\mathcal{J}$-classes
+in finite semigroups. -/
 lemma mem_isGreenD_eqvClass_iff_greenJClass_eq [Finite S] (x z : S) :
     z ∈ IsGreenD.eqvClass x ↔ GreenJClass.mk z = GreenJClass.mk x := by
   grind [GreenJClass.mk_eq_mk_iff, isGreenJ_of_isGreenD, isGreenD_of_isGreenJ]
 
 open Classical in
-/-- The fiber of elements $\mathcal{D}$-equivalent to `x` equals the fiber of elements with the same $\mathcal{J}$-class. -/
+/-- The fiber of elements $\mathcal{D}$-equivalent to `x` equals the fiber of elements
+with the same $\mathcal{J}$-class. -/
 lemma filter_isGreenD_eqvClass_eq (x : S) :
     Finset.univ.filter (· ∈ IsGreenD.eqvClass x) =
     Finset.univ.filter (fun z ↦ GreenJClass.mk z = GreenJClass.mk x) := by
@@ -117,7 +119,8 @@ lemma filter_isGreenD_eqvClass_eq (x : S) :
   exact mem_isGreenD_eqvClass_iff_greenJClass_eq x z
 
 open Classical in
-/-- The cost `nD` of the $\mathcal{D}$-class is bounded by the size of the corresponding $\mathcal{J}$-class. -/
+/-- The cost `nD` of the $\mathcal{D}$-class is bounded by the size of the
+corresponding $\mathcal{J}$-class. -/
 lemma nD_le_card_j_eq (x : S) :
     nD (IsGreenD.eqvClass x) ≤
       (Finset.univ.filter (fun z ↦ GreenJClass.mk z = GreenJClass.mk x)).card := by
@@ -125,7 +128,8 @@ lemma nD_le_card_j_eq (x : S) :
   exact nD_le_card_eqvClass x
 
 open Classical in
-/-- The number of elements strictly above in the $\mathcal{J}$-order decreases strictly when moving up. -/
+/-- The number of elements strictly above in the $\mathcal{J}$-order decreases strictly
+when moving up. -/
 lemma strictlyAbove_card_lt {x y : S} (hlt : GreenJClass.mk x < GreenJClass.mk y) :
     (Finset.univ.filter (fun z ↦ GreenJClass.mk y < GreenJClass.mk z)).card <
     (Finset.univ.filter (fun z ↦ GreenJClass.mk x < GreenJClass.mk z)).card := by
@@ -146,7 +150,8 @@ lemma strictlyAbove_card_lt {x y : S} (hlt : GreenJClass.mk x < GreenJClass.mk y
   exact Finset.card_lt_card (lt_of_le_of_ne h_le h_ne')
 
 open Classical in
-/-- Auxiliary bound on `nSElement x` by elements with $\mathcal{J}$-class $\ge \mathcal{J}(x)$, by induction on the strictly above count. -/
+/-- Auxiliary bound on `nSElement x` by elements with $\mathcal{J}$-class $\ge \mathcal{J}(x)$,
+by induction on the strictly above count. -/
 theorem nSElement_le_card_ge_aux (n : ℕ) (x : S)
     (hn : (Finset.univ.filter (fun y ↦ GreenJClass.mk x < GreenJClass.mk y)).card ≤ n) :
     nSElement x ≤ (Finset.univ.filter (fun z ↦ GreenJClass.mk x ≤ GreenJClass.mk z)).card := by

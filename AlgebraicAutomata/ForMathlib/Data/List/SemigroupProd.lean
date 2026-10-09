@@ -1,15 +1,12 @@
-module
-
 /-
 Copyright (c) 2026 Re'em Melamed-Katz. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Re'em Melamed-Katz
 -/
+module
+
 public import Mathlib.Algebra.Group.Subsemigroup.Basic
 public import Mathlib.Data.List.Basic
-
-@[expose] public section
-
 
 /-!
 # Non-empty List Product in Semigroups
@@ -20,6 +17,9 @@ Product of a non-empty list of elements in a bare semigroup `S` (without identit
 
 * [T. Colcombet, *The Factorization Forest Theorem*][colcombet2008]
 -/
+
+@[expose] public section
+
 
 variable {S : Type*} [Semigroup S]
 

@@ -1,17 +1,14 @@
-module
-
 /-
 Copyright (c) 2026 Re'em Melamed-Katz. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Re'em Melamed-Katz
 -/
+module
+
 public import Mathlib.Data.Fintype.Basic
 public import Mathlib.Data.Finset.Basic
 public import Mathlib.Data.Nat.Log
 public import AlgebraicAutomata.FactorizationForest.Tree
-
-@[expose] public section
-
 
 /-!
 # Sub-linear Ramsey Factorization Trees: The Truncated Addition Semigroup
@@ -22,6 +19,9 @@ Construction of sub-linear height factorization trees over the truncated additio
 
 * [T. Colcombet, *The Factorization Forest Theorem*][colcombet2008]
 -/
+
+@[expose] public section
+
 
 namespace Optimality
 

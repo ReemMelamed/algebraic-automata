@@ -1,10 +1,10 @@
-module
-
 /-
 Copyright (c) 2026 Re'em Melamed-Katz. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Re'em Melamed-Katz
 -/
+module
+
 public import Mathlib.Algebra.Group.Pointwise.Set.Basic
 public import Mathlib.Algebra.Group.Hom.Basic
 public import Mathlib.Algebra.Group.Subsemigroup.Basic
@@ -16,8 +16,6 @@ public import Mathlib.Order.CompleteLattice.Finset
 public import AlgebraicAutomata.FactorizationForest.Tree
 public import AlgebraicAutomata.ForMathlib.Data.List.SemigroupProd
 
-@[expose] public section
-
 /-!
 # Locally Finite Semigroups and Brown's Lemma
 
@@ -27,6 +25,9 @@ Locally finite semigroups, Brown's Lemma, and Colcombet's Set-Family Fixed Point
 
 * [T. Colcombet, *The Factorization Forest Theorem*][colcombet2008]
 -/
+
+@[expose] public section
+
 
 /-- A semigroup `S` is locally finite if every finite subset generates a finite subsemigroup. -/
 def IsLocallyFinite (S : Type*) [Semigroup S] : Prop :=
