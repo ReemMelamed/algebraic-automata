@@ -12,12 +12,6 @@ A formalization of finite semigroup theory, Green's relations, and Simon's facto
 
 In theoretical computer science and formal language theory, algebraic techniques analyze computations and regular behaviors via the structure of finite semigroups. A central combinatorial foundation is **Simon's factorization forest theorem**, an algebraic analogue of Ramsey's Theorem: every word evaluated in a finite semigroup $S$ admits an unranked factorization tree of bounded height ($3N(S) - 1 \le 3\vert{}S\vert{} - 1$) whose wide nodes evaluate to idempotents.
 
-This repository provides a machine-checked, self-contained formalization in Lean 4 of the algebraic structure of finite semigroups, Simon's factorization forest theorem (via Ramsey splits), infinitary extensions, and algebraic applications.
-
-## Verification status
-
-All proofs in this repository are machine-checked in Lean 4 without custom axioms or `sorry` (`#print axioms` depends strictly on standard foundational axioms: `propext`, `Classical.choice`, and `Quot.sound`).
-
 ## Project structure and formalized content
 
 ### 1. Green's relations and finite semigroup structure (`AlgebraicAutomata/GreensRelations/`)
